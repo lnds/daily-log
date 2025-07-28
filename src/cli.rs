@@ -6,6 +6,10 @@ use clap::{Parser, Subcommand};
 pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Commands>,
+    
+    /// Task description (if provided without subcommand, creates a 'now' entry)
+    #[arg(value_name = "TASK", trailing_var_arg = true)]
+    pub task: Vec<String>,
 }
 
 #[derive(Subcommand)]

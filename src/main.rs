@@ -29,11 +29,20 @@ fn main() -> color_eyre::Result<()> {
         Some(Commands::Today { section }) => {
             commands::handle_today(section)?;
         }
-        Some(Commands::Tui) | None => {
+        Some(Commands::Tui) => {
             let terminal = ratatui::init();
             let result = App::new().run(terminal);
             ratatui::restore();
             result?;
+        }
+        None => {
+            // If no command but task words provided, treat as "now" command
+            if !cli.task.is_empty() {
+                commands::handle_now(cli.task, vec![], None)?;
+            } else {
+                // If no command and no task words, show recent entries
+                commands::handle_recent(10, None)?;
+            }
         }
     }
 

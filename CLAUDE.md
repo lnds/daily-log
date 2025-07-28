@@ -6,14 +6,54 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Rust clone of Brett Terpstra's "doing" CLI tool - a command-line application for tracking what you're working on and what you've done. It provides both a CLI interface and a TUI (terminal UI) for managing daily work logs.
 
-### Core Features (Planned)
-- Track current work with `doing now`
-- Add future tasks with `doing later`
-- View recent entries with `doing recent`
-- Show today's work with `doing today`
-- Display last entry with `doing last`
-- Store data in TaskPaper-formatted text files
-- Support multiple sections/categories
+Brett Terpstra's "doing" is a comprehensive time tracking tool with over 30 commands for tracking status, recording time, and analyzing results. It stores data in TaskPaper-formatted text files and supports multiple sections/categories with flexible output formatting.
+
+### Currently Implemented Features
+- Track current work with `doing now` - Add entries to "Currently" section
+- Add future tasks with `doing later` - Add entries to "Later" section
+- View recent entries with `doing recent` - List recent entries with customizable count
+- Show today's work with `doing today` - Filter entries from today
+- Display last entry with `doing last` - Show most recent entry with time ago
+- Store data in TaskPaper-formatted text files (~/.doing.taskpaper)
+- Support for tags with values (@tag or @tag(value))
+- Support for notes on entries
+- Multiple sections/categories (Currently, Later, custom sections)
+
+### Features from Original "doing" (To Be Implemented)
+According to the wiki documentation, the original tool includes:
+
+**Core Commands:**
+- `doing done` - Mark entries as completed
+- `doing finish` - Finish last entry and mark done
+- `doing again/resume` - Repeat last entry
+- `doing meanwhile` - Add entry between others
+- `doing archive` - Archive completed entries
+- `doing show` - Display entries with advanced filtering
+
+**Time Tracking:**
+- Time spans on entries (duration tracking)
+- `doing on/off` - Start/stop time tracking
+- Time adjustments and editing
+
+**Advanced Features:**
+- Custom views with filtering and formatting
+- Multiple output formats (JSON, CSV, HTML, Markdown)
+- Plugins system for extensibility
+- Hooks for automation
+- Autotagging based on patterns
+- Batch editing capabilities
+- Undo history
+- Import/export functionality
+- Day One integration
+- Configuration file (~/.doingrc)
+- Environment variables support
+- Templates for custom formatting
+
+**Data Management:**
+- Multiple doing files
+- Sections beyond Currently/Later
+- Tag and search filtering with complex queries
+- Chronological and reverse chronological sorting
 
 ## Architecture
 
@@ -90,37 +130,55 @@ cargo test test_name
 - The main loop runs while `App.running` is true
 - Exit with Esc, q, or Ctrl-C
 
-## Implementation Plan
+## Implementation Status
 
-1. **Phase 1: Core Data Structures**
-   - Research and understand TaskPaper format
-   - Create Entry struct with timestamp, description, tags, section
-   - Create Section enum for categories (Currently, Later, etc.)
-   - Create DoingFile struct to represent the entire file
+### ✅ Completed Phases
+
+1. **Phase 1: Core Data Structures** 
+   - ✅ Entry struct with timestamp, description, tags, section
+   - ✅ Section enum for categories (Currently, Later, custom)
+   - ✅ DoingFile struct representing the entire file
 
 2. **Phase 2: CLI Framework**
-   - Add clap dependency and create CLI structure
-   - Define subcommands: now, later, recent, today, last
-   - Route commands to appropriate handlers
+   - ✅ Clap integration with subcommands
+   - ✅ Command routing to handlers
 
 3. **Phase 3: Basic Commands**
-   - Implement `now` command to add entries
-   - Implement `last` command to show most recent
-   - Implement `recent` command to list entries
-   - Implement `today` command for today's entries
-   - Implement `later` command for future tasks
+   - ✅ `now` command - adds entries to Currently section
+   - ✅ `later` command - adds entries to Later section
+   - ✅ `last` command - shows most recent entry
+   - ✅ `recent` command - lists recent entries
+   - ✅ `today` command - shows today's entries
 
 4. **Phase 4: File Persistence**
-   - Implement TaskPaper format parser
-   - Implement TaskPaper format writer
-   - Add file loading on startup
-   - Add file saving after modifications
+   - ✅ TaskPaper format parser
+   - ✅ TaskPaper format writer
+   - ✅ Automatic file loading/saving
 
-5. **Phase 5: Enhanced Features**
-   - Add configuration file support
-   - Add tag support and filtering
-   - Add time tracking features
-   - Update TUI to display entries
+### 🚧 Next Implementation Phases
+
+5. **Phase 5: Time Tracking**
+   - Add `done` command to mark entries complete
+   - Add `finish` command to complete current task
+   - Implement duration tracking
+   - Add time span support (@from(time) @to(time))
+
+6. **Phase 6: Advanced Commands**
+   - `show` command with filtering options
+   - `archive` command for completed tasks
+   - `again`/`resume` to repeat last entry
+   - `meanwhile` for inserting entries
+
+7. **Phase 7: Configuration & Views**
+   - Load/save ~/.doingrc configuration
+   - Custom views with filters
+   - Output format options (JSON, CSV, etc.)
+
+8. **Phase 8: Advanced Features**
+   - Tag filtering and search
+   - Batch editing
+   - Undo/redo support
+   - Import/export functionality
 
 ## TaskPaper Format Notes
 
@@ -140,3 +198,57 @@ Currently:
 Later:
 - Update documentation @priority(high)
 - Refactor authentication module
+```
+
+## Usage Examples
+
+### Basic Usage
+```bash
+# Add a new entry to Currently section
+daily-log now "Working on the README"
+daily-log now "Fixing bug #123" --tag priority=high --note "This affects production"
+
+# Add entry to Later section
+daily-log later "Research new testing framework"
+
+# View entries
+daily-log                   # Show recent entries (default: 10) - DEFAULT COMMAND
+daily-log last              # Show most recent entry
+daily-log recent            # Show recent entries (default: 10)
+daily-log recent -c 20      # Show 20 recent entries
+daily-log today             # Show today's entries
+daily-log today -s Later    # Show today's entries from Later section
+
+# Implicit now command - just type your task
+daily-log Working on documentation    # Same as: daily-log now "Working on documentation"
+daily-log Fix bug in login system     # Same as: daily-log now "Fix bug in login system"
+```
+
+### With Tags and Notes
+```bash
+# Add entry with tags
+daily-log now "Deploy to staging" --tag environment=staging --tag version=2.1.0
+
+# Add entry with note
+daily-log now "Meeting with client" --note "Discussed new features and timeline"
+```
+
+## Future Command Examples (Not Yet Implemented)
+```bash
+# Mark as done
+daily-log done            # Mark last entry as done
+daily-log finish          # Complete current task and add end time
+
+# Time tracking
+daily-log on "Working on feature"     # Start timing
+daily-log off                         # Stop timing
+
+# Advanced viewing
+daily-log show @tag=priority          # Show entries with priority tag
+daily-log show --from "2024-01-01"   # Show entries from date
+daily-log archive                     # Archive completed entries
+
+# Repeat/Resume
+daily-log again           # Repeat the last entry
+daily-log resume          # Resume the last entry
+```
