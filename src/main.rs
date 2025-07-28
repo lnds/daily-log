@@ -52,6 +52,39 @@ fn main() -> color_eyre::Result<()> {
             ratatui::restore();
             result?;
         }
+        Some(Commands::Done {
+            entry,
+            note,
+            ask,
+            back,
+            at,
+            took,
+            from,
+            section,
+            editor,
+            archive,
+            remove,
+            unfinished,
+            date,
+            noauto,
+        }) => {
+            commands::handle_done(
+                entry,
+                note,
+                ask,
+                back,
+                at,
+                took,
+                from,
+                section,
+                editor,
+                archive,
+                remove,
+                unfinished,
+                date,
+                noauto,
+            )?;
+        }
         None => {
             // If no command but task words provided, treat as "now" command
             if !cli.task.is_empty() {

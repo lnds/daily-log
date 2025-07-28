@@ -81,4 +81,63 @@ pub enum Commands {
 
     /// Launch the TUI interface
     Tui,
+
+    /// Add a completed item with @done(date). No argument finishes last entry
+    Done {
+        /// Entry text
+        #[arg(value_name = "ENTRY")]
+        entry: Vec<String>,
+
+        /// Include a note
+        #[arg(short, long = "note")]
+        note: Option<String>,
+
+        /// Prompt for note via multi-line input
+        #[arg(long = "ask")]
+        ask: bool,
+
+        /// Backdate start date for new entry to date string [4pm|20m|2h|yesterday noon]
+        #[arg(short = 'b', long = "back", alias = "started", alias = "since")]
+        back: Option<String>,
+
+        /// Set finish date to specific date/time (natural language parsed, e.g. --at=1:30pm)
+        #[arg(long = "at", alias = "finished")]
+        at: Option<String>,
+
+        /// Set completion date to start date plus interval (XX[mhd] or HH:MM)
+        #[arg(short = 't', long = "took", alias = "for")]
+        took: Option<String>,
+
+        /// Start and end times as a date/time range (e.g., "1am to 8am")
+        #[arg(long = "from")]
+        from: Option<String>,
+
+        /// Section
+        #[arg(short = 's', long = "section")]
+        section: Option<String>,
+
+        /// Edit entry with editor
+        #[arg(short = 'e', long = "editor")]
+        editor: bool,
+
+        /// Immediately archive the entry
+        #[arg(short = 'a', long = "archive")]
+        archive: bool,
+
+        /// Remove @done tag
+        #[arg(short = 'r', long = "remove")]
+        remove: bool,
+
+        /// Finish last entry not already marked @done
+        #[arg(short = 'u', long = "unfinished")]
+        unfinished: bool,
+
+        /// Include date
+        #[arg(long = "date", default_value = "true")]
+        date: bool,
+
+        /// Exclude auto tags and default tags
+        #[arg(short = 'X', long = "noauto")]
+        noauto: bool,
+    },
 }
