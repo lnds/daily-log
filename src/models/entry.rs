@@ -1,6 +1,7 @@
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Entry {
@@ -9,6 +10,7 @@ pub struct Entry {
     pub section: String,
     pub tags: HashMap<String, Option<String>>,
     pub note: Option<String>,
+    pub uuid: Uuid,
 }
 
 impl Entry {
@@ -19,6 +21,7 @@ impl Entry {
             section,
             tags: HashMap::new(),
             note: None,
+            uuid: Uuid::new_v4(),
         }
     }
 
@@ -47,19 +50,32 @@ impl Entry {
     }
 
     pub fn to_taskpaper(&self) -> String {
-        let mut result = format!("- {}", self.description);
-
+        // Build description with inline tags
+        let mut desc_with_tags = self.description.clone();
+        
+        // Add tags to the description
         for (tag, value) in &self.tags {
-            result.push_str(&format!(" @{}", tag));
+            desc_with_tags.push_str(&format!(" @{}", tag));
             if let Some(v) = value {
-                result.push_str(&format!("({})", v));
+                desc_with_tags.push_str(&format!("({})", v));
             }
         }
-
+        
+        // Format: - YYYY-MM-DD HH:MM | description @tags <uuid>
+        let mut result = format!(
+            " - {} | {} <{}>",
+            self.timestamp.format("%Y-%m-%d %H:%M"),
+            desc_with_tags,
+            self.uuid.as_simple()
+        );
+        
+        // Add note with proper indentation (2 spaces)
         if let Some(note) = &self.note {
-            result.push_str(&format!("\n    {}", note));
+            for line in note.lines() {
+                result.push_str(&format!("\n  {}", line));
+            }
         }
-
+        
         result
     }
 }
@@ -84,9 +100,10 @@ mod tests {
             .with_note("This is important".to_string());
 
         let output = entry.to_taskpaper();
-        assert!(output.contains("- Write tests"));
-        assert!(output.contains("@priority(high)"));
-        assert!(output.contains("    This is important"));
+        // Check format: - YYYY-MM-DD HH:MM | description @tags <uuid>
+        assert!(output.starts_with(" - "));
+        assert!(output.contains(" | Write tests @priority(high) <"));
+        assert!(output.contains("\n  This is important"));
 
         entry.mark_done();
         let output = entry.to_taskpaper();

@@ -9,51 +9,84 @@ This is a Rust clone of Brett Terpstra's "doing" CLI tool - a command-line appli
 Brett Terpstra's "doing" is a comprehensive time tracking tool with over 30 commands for tracking status, recording time, and analyzing results. It stores data in TaskPaper-formatted text files and supports multiple sections/categories with flexible output formatting.
 
 ### Currently Implemented Features
-- Track current work with `doing now` - Add entries to "Currently" section
-- Add future tasks with `doing later` - Add entries to "Later" section
-- View recent entries with `doing recent` - List recent entries with customizable count
-- Show today's work with `doing today` - Filter entries from today
-- Display last entry with `doing last` - Show most recent entry with time ago
-- Store data in TaskPaper-formatted text files (~/.doing.taskpaper)
-- Support for tags with values (@tag or @tag(value))
-- Support for notes on entries
-- Multiple sections/categories (Currently, Later, custom sections)
-
-### Features from Original "doing" (To Be Implemented)
-According to the wiki documentation, the original tool includes:
 
 **Core Commands:**
-- `doing done` - Mark entries as completed
-- `doing finish` - Finish last entry and mark done
-- `doing again/resume` - Repeat last entry
-- `doing meanwhile` - Add entry between others
-- `doing archive` - Archive completed entries
-- `doing show` - Display entries with advanced filtering
+- `now` - Add entries with full feature set:
+  - Interactive mode (run without arguments)
+  - Parenthetical notes: `doing now "Task (this becomes a note)"`
+  - Backdating: `--back "1 hour ago"` or `--back "yesterday 2pm"`
+  - Time ranges: `--from "from 2pm to 3:30pm"`
+  - Finish last entry: `-f` marks previous entry as @done
+  - Multi-line notes: `--ask` for interactive note entry
+  - Section support: `-s SectionName`
+  - Tag extraction from entry text: `@tag` or `@tag(value)`
+- `recent` - List recent entries with customizable count
+- `today` - Show today's entries
+- `last` - Show most recent entry with time ago
 
-**Time Tracking:**
-- Time spans on entries (duration tracking)
-- `doing on/off` - Start/stop time tracking
-- Time adjustments and editing
+**Other Features:**
+- Store data in doing's exact format: ` - YYYY-MM-DD HH:MM | description @tags <uuid>`
+- Each entry has a unique UUID identifier
+- Support for tags with values (@tag or @tag(value))
+- Support for notes on entries (indented with 2 spaces)
+- Multiple sections/categories (Currently, custom sections)
+- Default behavior: no args shows recent, any text creates new entry
+
+### Features from Original "doing" (To Be Implemented)
+The original doing tool includes 30+ commands:
+
+**Entry Management:**
+- `done, did` - Add a completed item with @done(date). No argument finishes last entry
+- `finish` - Mark last X entries as @done
+- `again, resume` - Repeat last entry as new entry
+- `meanwhile` - Finish any running @meanwhile tasks and optionally create a new one
+- `cancel` - End last X entries with no time tracked
+- `update` - Update doing to the latest version
+
+**Viewing & Searching:**
+- `show` - List all entries (with advanced filtering)
+- `grep, search` - Search for entries
+- `on` - List entries for a date
+- `since` - List entries since a date
+- `yesterday` - List entries from yesterday
+- `view` - Display a user-created view
+- `views` - List available custom views
+
+**Organization:**
+- `archive, move` - Move entries between sections
+- `rotate` - Move entries to archive file
+- `sections` - List, add, or remove sections in the Doing file
+- `tags` - List all tags in the current Doing file
+- `tag_dir` - Set the default tags for the current directory
+
+**Editing & Annotation:**
+- `note` - Add a note to the last entry
+- `tag` - Add tag(s) to last entry
+- `mark, flag` - Mark last entry as flagged
+- `reset, begin` - Reset the start time of an entry
+- `select` - Display an interactive menu to perform operations
 
 **Advanced Features:**
-- Custom views with filtering and formatting
-- Multiple output formats (JSON, CSV, HTML, Markdown)
-- Plugins system for extensibility
-- Hooks for automation
-- Autotagging based on patterns
-- Batch editing capabilities
-- Undo history
-- Import/export functionality
-- Day One integration
-- Configuration file (~/.doingrc)
-- Environment variables support
-- Templates for custom formatting
+- `import` - Import entries from an external source
+- `template` - Output HTML, CSS, and Markdown (ERB) templates for customization
+- `colors` - List available color variables for configuration templates and views
+- `plugins` - List installed plugins
+- `commands` - Enable and disable Doing commands
+- `completion` - Generate shell completion scripts
+- `config` - Edit the configuration file or output a value from it
+- `open` - Open the "doing" file in an editor
+- `undo` - Undo the last X changes to the Doing file
+- `redo` - Redo an undo command
+- `changes, changelog` - List recent changes in Doing
 
-**Data Management:**
-- Multiple doing files
-- Sections beyond Currently/Later
-- Tag and search filtering with complex queries
-- Chronological and reverse chronological sorting
+**Global Options:**
+- Color output control
+- Custom config file
+- Debug/verbose output
+- Pager support
+- Auto-tagging control
+- Notes inclusion
+- Yes/no menu automation
 
 ## Architecture
 
@@ -145,7 +178,6 @@ cargo test test_name
 
 3. **Phase 3: Basic Commands**
    - ✅ `now` command - adds entries to Currently section
-   - ✅ `later` command - adds entries to Later section
    - ✅ `last` command - shows most recent entry
    - ✅ `recent` command - lists recent entries
    - ✅ `today` command - shows today's entries
@@ -157,28 +189,44 @@ cargo test test_name
 
 ### 🚧 Next Implementation Phases
 
-5. **Phase 5: Time Tracking**
-   - Add `done` command to mark entries complete
-   - Add `finish` command to complete current task
-   - Implement duration tracking
-   - Add time span support (@from(time) @to(time))
+5. **Phase 5: Entry Completion & Time Tracking**
+   - `done, did` - Add completed item with @done(date), no arg finishes last
+   - `finish` - Mark last X entries as @done
+   - `cancel` - End last X entries with no time tracked
+   - Duration tracking between start and @done times
 
-6. **Phase 6: Advanced Commands**
-   - `show` command with filtering options
-   - `archive` command for completed tasks
-   - `again`/`resume` to repeat last entry
-   - `meanwhile` for inserting entries
+6. **Phase 6: Entry Management**
+   - `again, resume` - Repeat last entry as new entry
+   - `note` - Add a note to the last entry
+   - `tag` - Add tag(s) to last entry
+   - `mark, flag` - Mark last entry as flagged
+   - `reset, begin` - Reset the start time of an entry
 
-7. **Phase 7: Configuration & Views**
-   - Load/save ~/.doingrc configuration
-   - Custom views with filters
-   - Output format options (JSON, CSV, etc.)
+7. **Phase 7: Viewing & Search**
+   - `show` - List all entries with filtering
+   - `grep, search` - Search for entries
+   - `on` - List entries for a specific date
+   - `since` - List entries since a date
+   - `yesterday` - List entries from yesterday
 
-8. **Phase 8: Advanced Features**
-   - Tag filtering and search
-   - Batch editing
-   - Undo/redo support
-   - Import/export functionality
+8. **Phase 8: Organization & Archives**
+   - `sections` - List, add, or remove sections
+   - `archive, move` - Move entries between sections
+   - `rotate` - Move entries to archive file
+   - `tags` - List all tags in the current file
+
+9. **Phase 9: Configuration & Views**
+   - `config` - Edit configuration file
+   - `view` - Display user-created views
+   - `views` - List available custom views
+   - Custom output formats (JSON, CSV, HTML)
+
+10. **Phase 10: Advanced Features**
+    - `undo/redo` - Undo/redo changes
+    - `import` - Import from external sources
+    - `select` - Interactive menu operations
+    - `meanwhile` - Handle @meanwhile tasks
+    - `open` - Open doing file in editor
 
 ## TaskPaper Format Notes
 
@@ -195,21 +243,42 @@ Currently:
 - Review PR for feature X @in_progress
     This needs careful attention to the API changes
 
-Later:
-- Update documentation @priority(high)
-- Refactor authentication module
+Archive:
+- Update documentation @priority(high) @done(2024-01-14 16:30)
+- Refactor authentication module @done(2024-01-13 14:00)
 ```
 
 ## Usage Examples
 
 ### Basic Usage
 ```bash
-# Add a new entry to Currently section
-daily-log now "Working on the README"
-daily-log now "Fixing bug #123" --tag priority=high --note "This affects production"
+# Add a new entry interactively
+daily-log now
 
-# Add entry to Later section
-daily-log later "Research new testing framework"
+# Add entry with description
+daily-log now "Working on the README"
+
+# Add entry with parenthetical note
+daily-log now "Deploy to staging (remember to update configs)"
+
+# Add entry with tags in the text
+daily-log now "Debugging issue @bug @priority(high)"
+
+# Backdate an entry
+daily-log now --back "2 hours ago" "Started debugging earlier"
+daily-log now --back "yesterday 3pm" "Yesterday's meeting"
+
+# Add timed entry with start and end
+daily-log now --from "from 1pm to 2:30pm" "Team standup meeting"
+
+# Finish last entry and start new one
+daily-log now -f "Starting new task"
+
+# Add entry with multi-line note
+daily-log now --ask "Complex task"
+
+# Add to specific section
+daily-log now -s Archive "Old task that was completed"
 
 # View entries
 daily-log                   # Show recent entries (default: 10) - DEFAULT COMMAND
@@ -217,7 +286,7 @@ daily-log last              # Show most recent entry
 daily-log recent            # Show recent entries (default: 10)
 daily-log recent -c 20      # Show 20 recent entries
 daily-log today             # Show today's entries
-daily-log today -s Later    # Show today's entries from Later section
+daily-log today -s Archive  # Show today's entries from Archive section
 
 # Implicit now command - just type your task
 daily-log Working on documentation    # Same as: daily-log now "Working on documentation"

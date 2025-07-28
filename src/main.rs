@@ -14,11 +14,28 @@ fn main() -> color_eyre::Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Some(Commands::Now { task, tag, note }) => {
-            commands::handle_now(task, tag, note)?;
-        }
-        Some(Commands::Later { task, tag, note }) => {
-            commands::handle_later(task, tag, note)?;
+        Some(Commands::Now { 
+            entry, 
+            note, 
+            back, 
+            section, 
+            finish_last, 
+            from, 
+            editor, 
+            ask, 
+            noauto 
+        }) => {
+            commands::handle_now(
+                entry, 
+                note, 
+                back, 
+                section, 
+                finish_last, 
+                from, 
+                editor, 
+                ask, 
+                noauto
+            )?;
         }
         Some(Commands::Last) => {
             commands::handle_last()?;
@@ -38,7 +55,17 @@ fn main() -> color_eyre::Result<()> {
         None => {
             // If no command but task words provided, treat as "now" command
             if !cli.task.is_empty() {
-                commands::handle_now(cli.task, vec![], None)?;
+                commands::handle_now(
+                    cli.task, 
+                    None, 
+                    None, 
+                    None, 
+                    false, 
+                    None, 
+                    false, 
+                    false, 
+                    false
+                )?;
             } else {
                 // If no command and no task words, show recent entries
                 commands::handle_recent(10, None)?;

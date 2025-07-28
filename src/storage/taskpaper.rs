@@ -1,9 +1,10 @@
 use crate::models::{DoingFile, Entry};
-use chrono::{DateTime, Local, NaiveDateTime};
+use chrono::{Local, TimeZone};
 use regex::Regex;
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use uuid::Uuid;
 
 pub fn parse_taskpaper(path: &Path) -> color_eyre::Result<DoingFile> {
     let content = match fs::read_to_string(path) {
@@ -19,7 +20,8 @@ pub fn parse_taskpaper(path: &Path) -> color_eyre::Result<DoingFile> {
     let mut current_entry: Option<Entry> = None;
 
     let project_regex = Regex::new(r"^(.+):$")?;
-    let task_regex = Regex::new(r"^- (.+)$")?;
+    // Updated regex to match: - YYYY-MM-DD HH:MM | description <uuid>
+    let task_regex = Regex::new(r"^ - (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) \| (.+?) <([a-f0-9]{32})>$")?;
     let tag_regex = Regex::new(r"@(\w+)(?:\(([^)]+)\))?")?;
 
     for line in content.lines() {
@@ -33,29 +35,38 @@ pub fn parse_taskpaper(path: &Path) -> color_eyre::Result<DoingFile> {
                 doing_file.add_entry(entry);
             }
 
-            let task_line = &captures[1];
+            let timestamp_str = &captures[1];
+            let task_line = &captures[2];
+            let uuid_str = &captures[3];
+            
+            // Parse timestamp as local time
+            let timestamp = chrono::NaiveDateTime::parse_from_str(timestamp_str, "%Y-%m-%d %H:%M")
+                .ok()
+                .and_then(|naive| Local.from_local_datetime(&naive).single())
+                .unwrap_or_else(|| Local::now());
+                
+            // Parse UUID
+            let uuid = Uuid::parse_str(uuid_str).unwrap_or_else(|_| Uuid::new_v4());
+            
             let mut description = task_line.to_string();
             let mut tags = HashMap::new();
-
+            
+            // Extract tags from the description
             for tag_capture in tag_regex.captures_iter(task_line) {
                 let tag_name = tag_capture[1].to_string();
                 let tag_value = tag_capture.get(2).map(|m| m.as_str().to_string());
                 tags.insert(tag_name, tag_value);
-
+                
                 description = description.replace(&tag_capture[0], "").trim().to_string();
             }
-
+            
             let mut entry = Entry::new(description, current_section.clone());
             entry.tags = tags;
-
-            if let Some(Some(done_time)) = entry.tags.get("done") {
-                if let Ok(timestamp) = parse_done_timestamp(done_time) {
-                    entry = entry.with_timestamp(timestamp);
-                }
-            }
-
+            entry.timestamp = timestamp;
+            entry.uuid = uuid;
+            
             current_entry = Some(entry);
-        } else if line.starts_with("    ") && current_entry.is_some() {
+        } else if line.starts_with("  ") && !line.starts_with(" -") && current_entry.is_some() {
             if let Some(ref mut entry) = current_entry {
                 let note_line = line.trim_start();
                 if let Some(existing_note) = &mut entry.note {
@@ -85,27 +96,6 @@ pub fn save_taskpaper(doing_file: &DoingFile) -> color_eyre::Result<()> {
     Ok(())
 }
 
-fn parse_done_timestamp(timestamp: &str) -> Result<DateTime<Local>, chrono::ParseError> {
-    let formats = [
-        "%Y-%m-%d %H:%M",
-        "%Y-%m-%d %H:%M:%S",
-        "%Y/%m/%d %H:%M",
-        "%Y/%m/%d %H:%M:%S",
-    ];
-
-    for format in &formats {
-        if let Ok(naive) = NaiveDateTime::parse_from_str(timestamp, format) {
-            return Ok(DateTime::from_naive_utc_and_offset(
-                naive,
-                *Local::now().offset(),
-            ));
-        }
-    }
-
-    let naive = NaiveDateTime::parse_from_str("invalid", "%Y-%m-%d");
-    Err(naive.unwrap_err())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -116,19 +106,19 @@ mod tests {
     fn test_parse_empty_file() {
         let path = Path::new("nonexistent.taskpaper");
         let result = parse_taskpaper(path).unwrap();
-        assert_eq!(result.sections.len(), 2);
+        assert_eq!(result.sections.len(), 1);
     }
 
     #[test]
     fn test_parse_taskpaper_content() {
         let mut temp_file = NamedTempFile::new().unwrap();
         writeln!(temp_file, "Currently:").unwrap();
-        writeln!(temp_file, "- Working on parser @in_progress").unwrap();
-        writeln!(temp_file, "    This is a note").unwrap();
-        writeln!(temp_file, "- Completed task @done(2024-01-15 14:30)").unwrap();
+        writeln!(temp_file, " - 2025-07-28 16:24 | Working on parser @in_progress <7a1185c6024152ac077183f31c40acdd>").unwrap();
+        writeln!(temp_file, "  This is a note").unwrap();
+        writeln!(temp_file, " - 2025-07-28 12:28 | Completed task @done(2025-07-28 13:58) <e520e7753401241cb8d2ef3ad6ba3fa7>").unwrap();
         writeln!(temp_file, "").unwrap();
-        writeln!(temp_file, "Later:").unwrap();
-        writeln!(temp_file, "- Future task @priority(high)").unwrap();
+        writeln!(temp_file, "Archive:").unwrap();
+        writeln!(temp_file, " - 2025-07-28 09:37 | Archived task @priority(high) <ff20b760b698fe0bd7a800213cb6cc3f>").unwrap();
 
         let result = parse_taskpaper(temp_file.path()).unwrap();
 
@@ -138,10 +128,11 @@ mod tests {
         assert!(currently[0].tags.contains_key("in_progress"));
         assert_eq!(currently[0].note, Some("This is a note".to_string()));
 
-        let later = result.get_entries("Later").unwrap();
-        assert_eq!(later.len(), 1);
+        let archive = result.get_entries("Archive").unwrap();
+        assert_eq!(archive.len(), 1);
+        assert_eq!(archive[0].description, "Archived task");
         assert_eq!(
-            later[0].tags.get("priority"),
+            archive[0].tags.get("priority"),
             Some(&Some("high".to_string()))
         );
     }
