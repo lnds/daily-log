@@ -309,4 +309,39 @@ pub enum Commands {
         #[arg(short = 'x', long = "exact")]
         exact: bool,
     },
+
+    /// Delete entries from the doing file
+    Delete {
+        /// Number of entries to delete (default: 1)
+        #[arg(value_name = "COUNT", default_value = "1")]
+        count: usize,
+
+        /// Select item(s) to delete from a menu of matching entries
+        #[arg(short = 'i', long = "interactive")]
+        interactive: bool,
+
+        /// Delete items that *don't* match search/tag filters
+        #[arg(long = "not")]
+        not: bool,
+
+        /// Section (may be used more than once)
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Filter entries using a search query
+        #[arg(long = "search")]
+        search: Option<String>,
+
+        /// Filter entries by tag
+        #[arg(long = "tag")]
+        tag: Option<String>,
+
+        /// Force exact search string matching (case sensitive)
+        #[arg(short = 'x', long = "exact")]
+        exact: bool,
+
+        /// Force deletion without confirmation
+        #[arg(short = 'f', long = "force")]
+        force: bool,
+    },
 }

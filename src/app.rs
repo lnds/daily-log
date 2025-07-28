@@ -7,7 +7,7 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
 };
-use crate::storage::{Config, parse_taskpaper};
+use crate::storage::{Config, parse_taskpaper, save_taskpaper};
 use crate::models::Entry;
 use chrono::{Local, Duration, TimeZone};
 
@@ -176,7 +176,7 @@ impl App {
         let help_text = if let Some(error) = &self.error {
             format!("Error: {} | Press 'q' to quit, 'r' to reload", error)
         } else {
-            "Press 'q' to quit, ↑/↓ to navigate, Enter to view details, 'r' to reload".to_string()
+            "q: quit | ↑/↓: navigate | Enter: details | d: delete | r: reload".to_string()
         };
         let help = Paragraph::new(help_text)
             .style(Style::default().fg(if self.error.is_some() { Color::Red } else { Color::Gray }))
@@ -348,6 +348,12 @@ impl App {
                     self.show_detail = true;
                 }
             }
+            (_, KeyCode::Char('d')) => {
+                // Delete selected entry
+                if self.selected < self.entries.len() {
+                    self.delete_entry();
+                }
+            }
             _ => {}
         }
     }
@@ -355,5 +361,48 @@ impl App {
     /// Set running to false to quit the application.
     fn quit(&mut self) {
         self.running = false;
+    }
+
+    /// Delete the selected entry
+    fn delete_entry(&mut self) {
+        if let Some(entry) = self.entries.get(self.selected) {
+            // Use the delete command logic
+            let config = crate::storage::Config::load();
+            let doing_file_path = config.doing_file_path();
+            
+            match crate::storage::parse_taskpaper(&doing_file_path) {
+                Ok(mut doing_file) => {
+                    // Find and remove the entry
+                    let mut deleted = false;
+                    for (_section_name, entries) in doing_file.sections.iter_mut() {
+                        let initial_len = entries.len();
+                        entries.retain(|e| e.uuid != entry.uuid);
+                        if entries.len() < initial_len {
+                            deleted = true;
+                            break;
+                        }
+                    }
+                    
+                    if deleted {
+                        // Save the file
+                        if let Err(e) = save_taskpaper(&doing_file) {
+                            self.error = Some(format!("Failed to save after deletion: {}", e));
+                        } else {
+                            // Remove from UI and adjust selection
+                            self.entries.remove(self.selected);
+                            if self.selected >= self.entries.len() && !self.entries.is_empty() {
+                                self.selected = self.entries.len() - 1;
+                            }
+                            self.error = None;
+                        }
+                    } else {
+                        self.error = Some("Entry not found in file".to_string());
+                    }
+                }
+                Err(e) => {
+                    self.error = Some(format!("Failed to load file for deletion: {}", e));
+                }
+            }
+        }
     }
 }

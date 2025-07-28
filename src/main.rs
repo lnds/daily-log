@@ -181,6 +181,27 @@ fn main() -> color_eyre::Result<()> {
                 exact,
             )?;
         }
+        Some(Commands::Delete {
+            count,
+            interactive,
+            not,
+            sections,
+            search,
+            tag,
+            exact,
+            force,
+        }) => {
+            commands::handle_delete(
+                count,
+                interactive,
+                not,
+                sections,
+                search,
+                tag,
+                exact,
+                force,
+            )?;
+        }
         None => {
             // If no command but task words provided, treat as "now" command
             if !cli.task.is_empty() {
