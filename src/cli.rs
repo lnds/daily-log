@@ -140,4 +140,173 @@ pub enum Commands {
         #[arg(short = 'X', long = "noauto")]
         noauto: bool,
     },
+
+    /// Mark last X entries as @done
+    Finish {
+        /// Number of entries to finish (default: 1)
+        #[arg(value_name = "COUNT", default_value = "1")]
+        count: usize,
+
+        /// Archive entries
+        #[arg(short = 'a', long = "archive")]
+        archive: bool,
+
+        /// Set finish date to specific date/time (natural language parsed)
+        #[arg(long = "at", alias = "finished")]
+        at: Option<String>,
+
+        /// Auto-generate finish dates from next entry's start time
+        #[arg(long = "auto")]
+        auto: bool,
+
+        /// Backdate completed date to date string
+        #[arg(short = 'b', long = "back", alias = "started")]
+        back: Option<String>,
+
+        /// Start and end times as a date/time range
+        #[arg(long = "from")]
+        from: Option<String>,
+
+        /// Select item(s) to finish from a menu of matching entries
+        #[arg(short = 'i', long = "interactive")]
+        interactive: bool,
+
+        /// Finish items that *don't* match search/tag filters
+        #[arg(long = "not")]
+        not: bool,
+
+        /// Remove @done tag
+        #[arg(short = 'r', long = "remove")]
+        remove: bool,
+
+        /// Section (may be used more than once)
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Filter entries using a search query
+        #[arg(long = "search")]
+        search: Option<String>,
+
+        /// Set completion date to start date plus interval
+        #[arg(short = 't', long = "took", alias = "for")]
+        took: Option<String>,
+
+        /// Filter entries by tag
+        #[arg(long = "tag")]
+        tag: Option<String>,
+
+        /// Finish last entry (or entries) not already marked @done
+        #[arg(short = 'u', long = "unfinished")]
+        unfinished: bool,
+
+        /// Overwrite existing @done tag with new date
+        #[arg(long = "update")]
+        update: bool,
+
+        /// Force exact search string matching (case sensitive)
+        #[arg(short = 'x', long = "exact")]
+        exact: bool,
+
+        /// Include date
+        #[arg(long = "date", default_value = "true")]
+        date: bool,
+    },
+
+    /// Alias for done command
+    Did {
+        /// Entry text
+        #[arg(value_name = "ENTRY")]
+        entry: Vec<String>,
+
+        /// Include a note
+        #[arg(short, long = "note")]
+        note: Option<String>,
+
+        /// Prompt for note via multi-line input
+        #[arg(long = "ask")]
+        ask: bool,
+
+        /// Backdate start date for new entry to date string [4pm|20m|2h|yesterday noon]
+        #[arg(short = 'b', long = "back", alias = "started", alias = "since")]
+        back: Option<String>,
+
+        /// Set finish date to specific date/time (natural language parsed, e.g. --at=1:30pm)
+        #[arg(long = "at", alias = "finished")]
+        at: Option<String>,
+
+        /// Set completion date to start date plus interval (XX[mhd] or HH:MM)
+        #[arg(short = 't', long = "took", alias = "for")]
+        took: Option<String>,
+
+        /// Start and end times as a date/time range (e.g., "1am to 8am")
+        #[arg(long = "from")]
+        from: Option<String>,
+
+        /// Section
+        #[arg(short = 's', long = "section")]
+        section: Option<String>,
+
+        /// Edit entry with editor
+        #[arg(short = 'e', long = "editor")]
+        editor: bool,
+
+        /// Immediately archive the entry
+        #[arg(short = 'a', long = "archive")]
+        archive: bool,
+
+        /// Remove @done tag
+        #[arg(short = 'r', long = "remove")]
+        remove: bool,
+
+        /// Finish last entry not already marked @done
+        #[arg(short = 'u', long = "unfinished")]
+        unfinished: bool,
+
+        /// Include date
+        #[arg(long = "date", default_value = "true")]
+        date: bool,
+
+        /// Exclude auto tags and default tags
+        #[arg(short = 'X', long = "noauto")]
+        noauto: bool,
+    },
+
+    /// End last X entries with no time tracked
+    Cancel {
+        /// Number of entries to cancel (default: 1)
+        #[arg(value_name = "COUNT", default_value = "1")]
+        count: usize,
+
+        /// Archive entries
+        #[arg(short = 'a', long = "archive")]
+        archive: bool,
+
+        /// Select item(s) to cancel from a menu of matching entries
+        #[arg(short = 'i', long = "interactive")]
+        interactive: bool,
+
+        /// Cancel items that *don't* match search/tag filters
+        #[arg(long = "not")]
+        not: bool,
+
+        /// Section (may be used more than once)
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Filter entries using a search query
+        #[arg(long = "search")]
+        search: Option<String>,
+
+        /// Filter entries by tag
+        #[arg(long = "tag")]
+        tag: Option<String>,
+
+        /// Cancel last entry (or entries) not already marked @done
+        #[arg(short = 'u', long = "unfinished")]
+        unfinished: bool,
+
+        /// Force exact search string matching (case sensitive)
+        #[arg(short = 'x', long = "exact")]
+        exact: bool,
+    },
 }

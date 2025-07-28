@@ -24,6 +24,14 @@ impl DoingFile {
             .push(entry);
     }
 
+    pub fn add_entry_to_section(&mut self, mut entry: Entry, section: String) {
+        entry.section = section.clone();
+        self.sections
+            .entry(section)
+            .or_insert_with(Vec::new)
+            .push(entry);
+    }
+
     pub fn get_entries(&self, section: &str) -> Option<&Vec<Entry>> {
         self.sections.get(section)
     }

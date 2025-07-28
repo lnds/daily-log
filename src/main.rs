@@ -85,6 +85,102 @@ fn main() -> color_eyre::Result<()> {
                 noauto,
             )?;
         }
+        Some(Commands::Finish {
+            count,
+            archive,
+            at,
+            auto,
+            back,
+            from,
+            interactive,
+            not,
+            remove,
+            sections,
+            search,
+            took,
+            tag,
+            unfinished,
+            update,
+            exact,
+            date,
+        }) => {
+            commands::handle_finish(
+                count,
+                archive,
+                at,
+                auto,
+                back,
+                from,
+                interactive,
+                not,
+                remove,
+                sections,
+                search,
+                took,
+                tag,
+                unfinished,
+                update,
+                exact,
+                date,
+            )?;
+        }
+        Some(Commands::Did {
+            entry,
+            note,
+            ask,
+            back,
+            at,
+            took,
+            from,
+            section,
+            editor,
+            archive,
+            remove,
+            unfinished,
+            date,
+            noauto,
+        }) => {
+            // Did is an alias for done
+            commands::handle_done(
+                entry,
+                note,
+                ask,
+                back,
+                at,
+                took,
+                from,
+                section,
+                editor,
+                archive,
+                remove,
+                unfinished,
+                date,
+                noauto,
+            )?;
+        }
+        Some(Commands::Cancel {
+            count,
+            archive,
+            interactive,
+            not,
+            sections,
+            search,
+            tag,
+            unfinished,
+            exact,
+        }) => {
+            commands::handle_cancel(
+                count,
+                archive,
+                interactive,
+                not,
+                sections,
+                search,
+                tag,
+                unfinished,
+                exact,
+            )?;
+        }
         None => {
             // If no command but task words provided, treat as "now" command
             if !cli.task.is_empty() {
