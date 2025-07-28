@@ -148,13 +148,13 @@ cargo test test_name
 - **ratatui** (0.29.0): Terminal UI framework
 - **crossterm** (0.28.1): Cross-platform terminal manipulation
 - **color-eyre** (0.6.3): Enhanced error handling and reporting
-
-### To Add
-- **clap** (4.x): Command-line argument parsing
-- **chrono**: Date and time handling
+- **clap** (4.5): Command-line argument parsing with derive
+- **chrono** (0.4): Date and time handling with serde support
+- **chrono-english** (0.1): Natural language date parsing
 - **serde** + **serde_json**: Configuration serialization
-- **dirs**: Standard directory paths (for config/data files)
-- **regex**: For parsing TaskPaper format
+- **dirs** (5.0): Standard directory paths (for config/data files)
+- **regex** (1.10): For parsing TaskPaper format and tag extraction
+- **uuid** (1.10): Unique identifiers for entries
 
 ## Important Notes
 
@@ -168,32 +168,63 @@ cargo test test_name
 ### ✅ Completed Phases
 
 1. **Phase 1: Core Data Structures** 
-   - ✅ Entry struct with timestamp, description, tags, section
-   - ✅ Section enum for categories (Currently, Later, custom)
+   - ✅ Entry struct with timestamp, description, tags, section, UUID
+   - ✅ Section support for categories (Currently, Archive, custom)
    - ✅ DoingFile struct representing the entire file
+   - ✅ TaskPaper format: ` - YYYY-MM-DD HH:MM | description @tags <uuid>`
 
 2. **Phase 2: CLI Framework**
    - ✅ Clap integration with subcommands
    - ✅ Command routing to handlers
+   - ✅ Natural language date parsing with chrono-english
 
 3. **Phase 3: Basic Commands**
-   - ✅ `now` command - adds entries to Currently section
+   - ✅ `now` command - adds entries with full feature support:
+     - Backdating with --back
+     - Time ranges with --from
+     - Parenthetical notes
+     - Tag extraction from text
+     - Multi-line notes with --ask
+     - Finish last entry with --finish_last
    - ✅ `last` command - shows most recent entry
-   - ✅ `recent` command - lists recent entries
+   - ✅ `recent` command - lists recent entries with:
+     - Box drawing characters display
+     - Duration calculation for done entries
+     - 24-hour time format
+     - Note display with proper indentation
    - ✅ `today` command - shows today's entries
+   - ✅ `tui` command - Terminal UI with:
+     - Entry list view with navigation
+     - Detail view for entries
+     - Note display
+     - Elapsed time for done entries
 
 4. **Phase 4: File Persistence**
-   - ✅ TaskPaper format parser
+   - ✅ TaskPaper format parser with UUID support
    - ✅ TaskPaper format writer
    - ✅ Automatic file loading/saving
-
-### 🚧 Next Implementation Phases
+   - ✅ Configuration support (~/.doingrc)
 
 5. **Phase 5: Entry Completion & Time Tracking**
-   - `done, did` - Add completed item with @done(date), no arg finishes last
-   - `finish` - Mark last X entries as @done
-   - `cancel` - End last X entries with no time tracked
-   - Duration tracking between start and @done times
+   - ✅ `done, did` - Add completed item with @done(date)
+     - No argument finishes last entry
+     - Supports --back, --at, --took, --from for time control
+     - Archive with --archive
+     - Remove @done with --remove
+     - Note support with --note and --ask
+   - ✅ `finish` - Mark last X entries as @done
+     - Advanced filtering (search, tags, sections)
+     - Auto mode to calculate times from next entry
+     - NOT mode to invert filters
+     - Update existing @done tags
+   - ✅ `cancel` - End last X entries with no time tracked
+     - Adds @done without timestamp
+     - Same filtering as finish command
+   - ✅ Duration tracking between start and @done times
+     - Displayed in recent command and TUI
+     - Format: HH:MM:SS
+
+### 🚧 Next Implementation Phases
 
 6. **Phase 6: Entry Management**
    - `again, resume` - Repeat last entry as new entry
