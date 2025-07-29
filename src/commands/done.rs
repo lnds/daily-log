@@ -55,7 +55,7 @@ pub fn handle_done(
             
             if found {
                 save_taskpaper(&doing_file)?;
-                println!("Removed @done tag from: {}", entry_desc);
+                println!("Removed @done tag from: {entry_desc}");
                 return Ok(());
             }
         } else {
@@ -126,7 +126,7 @@ pub fn handle_done(
                 
                 save_taskpaper(&doing_file)?;
                 if let Some((time_str, desc, done_time_str)) = entry_info {
-                    println!("{}: {} @done({})", time_str, desc, done_time_str);
+                    println!("{time_str}: {desc} @done({done_time_str})");
                 }
                 return Ok(());
             }
@@ -192,7 +192,7 @@ pub fn handle_done(
         }
         
         // Remove trailing empty lines
-        while lines.last().map_or(false, |l| l.is_empty()) {
+        while lines.last().is_some_and(|l| l.is_empty()) {
             lines.pop();
         }
         
@@ -266,9 +266,9 @@ pub fn handle_done(
             .filter(|(k, _)| k != &"done")  // Don't show done tag again
             .map(|(k, v)| {
                 if let Some(val) = v {
-                    format!("@{}({})", k, val)
+                    format!("@{k}({val})")
                 } else {
-                    format!("@{}", k)
+                    format!("@{k}")
                 }
             })
             .collect();
@@ -280,7 +280,7 @@ pub fn handle_done(
     if let Some(note) = &new_entry.note {
         println!("  Note: {}", note.lines().next().unwrap_or(""));
         for line in note.lines().skip(1) {
-            println!("        {}", line);
+            println!("        {line}");
         }
     }
     
@@ -377,7 +377,7 @@ fn parse_duration(duration_str: &str) -> Result<Duration, color_eyre::eyre::Erro
             _ => return Err(color_eyre::eyre::eyre!("Invalid duration unit: {}", unit)),
         };
         
-        total_duration = total_duration + unit_duration;
+        total_duration += unit_duration;
     }
     
     if matched {

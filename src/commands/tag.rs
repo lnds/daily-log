@@ -68,8 +68,8 @@ pub fn handle_tag(
     // Process tags
     let mut tags_to_process: Vec<(String, Option<String>)> = Vec::new();
     for tag_str in &tags {
-        let tag_name = if tag_str.starts_with('@') {
-            tag_str[1..].to_string()
+        let tag_name = if let Some(stripped) = tag_str.strip_prefix('@') {
+            stripped.to_string()
         } else {
             tag_str.to_string()
         };
@@ -130,9 +130,9 @@ fn format_tags(tags: &std::collections::HashMap<String, Option<String>>) -> Stri
     let mut tag_strs: Vec<String> = tags.iter()
         .map(|(tag, value)| {
             if let Some(val) = value {
-                format!("@{}({})", tag, val)
+                format!("@{tag}({val})")
             } else {
-                format!("@{}", tag)
+                format!("@{tag}")
             }
         })
         .collect();
@@ -147,8 +147,8 @@ fn remove_tags(
     case: &str,
 ) -> Result<(), color_eyre::eyre::Error> {
     for tag_pattern in tags_to_remove {
-        let pattern = if tag_pattern.starts_with('@') {
-            &tag_pattern[1..]
+        let pattern = if let Some(stripped) = tag_pattern.strip_prefix('@') {
+            stripped
         } else {
             tag_pattern
         };
@@ -175,8 +175,8 @@ fn rename_tags(
     use_regex: bool,
     case: &str,
 ) -> Result<(), color_eyre::eyre::Error> {
-    let pattern = if from_pattern.starts_with('@') {
-        &from_pattern[1..]
+    let pattern = if let Some(stripped) = from_pattern.strip_prefix('@') {
+        stripped
     } else {
         from_pattern
     };
@@ -218,9 +218,9 @@ fn create_regex(pattern: &str, case: &str) -> Result<Regex, color_eyre::eyre::Er
     };
     
     let regex = if case_sensitive {
-        Regex::new(&format!("^{}$", pattern))?
+        Regex::new(&format!("^{pattern}$"))?
     } else {
-        Regex::new(&format!("(?i)^{}$", pattern))?
+        Regex::new(&format!("(?i)^{pattern}$"))?
     };
     
     Ok(regex)
@@ -272,9 +272,7 @@ fn find_entries_to_modify(
     
     // Apply unfinished filter
     if unfinished {
-        filtered_entries = filtered_entries.into_iter()
-            .filter(|(_, entry)| !entry.is_done())
-            .collect();
+        filtered_entries.retain(|(_, entry)| !entry.is_done());
     }
     
     // Apply NOT filter if specified
@@ -333,14 +331,13 @@ fn filter_by_search(
         let regex = if case_sensitive {
             Regex::new(pattern)?
         } else {
-            Regex::new(&format!("(?i){}", pattern))?
+            Regex::new(&format!("(?i){pattern}"))?
         };
         entries.into_iter()
             .filter(|(_, entry)| regex.is_match(&entry.description))
             .collect()
-    } else if search_query.starts_with('\'') {
+    } else if let Some(query) = search_query.strip_prefix('\'') {
         // Exact match
-        let query = &search_query[1..];
         entries.into_iter()
             .filter(|(_, entry)| {
                 if case_sensitive {
@@ -390,7 +387,7 @@ fn filter_by_tag(
                 if tag.contains('*') || tag.contains('?') {
                     // Wildcard matching
                     let pattern = tag.replace('*', ".*").replace('?', ".");
-                    if let Ok(regex) = Regex::new(&format!("^{}$", pattern)) {
+                    if let Ok(regex) = Regex::new(&format!("^{pattern}$")) {
                         for entry_tag in entry.tags.keys() {
                             if regex.is_match(entry_tag) {
                                 return true;

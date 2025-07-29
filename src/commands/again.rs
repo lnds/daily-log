@@ -5,28 +5,31 @@ use chrono_english::{parse_date_string, Dialect};
 use regex::Regex;
 use std::io;
 
-pub fn handle_again(
-    noauto: bool,
-    ask: bool,
-    back: Option<String>,
-    _bool_op: String,
-    case: String,
-    editor: bool,
-    interactive: bool,
-    in_section: Option<String>,
-    note: Option<String>,
-    not: bool,
-    sections: Vec<String>,
-    search: Option<String>,
-    tag: Option<String>,
-    _val: Vec<String>,
-    exact: bool,
-) -> color_eyre::Result<()> {
-    if interactive {
+#[derive(Debug)]
+pub struct AgainOptions {
+    pub noauto: bool,
+    pub ask: bool,
+    pub back: Option<String>,
+    pub _bool_op: String,
+    pub case: String,
+    pub editor: bool,
+    pub interactive: bool,
+    pub in_section: Option<String>,
+    pub note: Option<String>,
+    pub not: bool,
+    pub sections: Vec<String>,
+    pub search: Option<String>,
+    pub tag: Option<String>,
+    pub _val: Vec<String>,
+    pub exact: bool,
+}
+
+pub fn handle_again(opts: AgainOptions) -> color_eyre::Result<()> {
+    if opts.interactive {
         return Err(color_eyre::eyre::eyre!("Interactive mode not yet implemented"));
     }
 
-    if editor {
+    if opts.editor {
         return Err(color_eyre::eyre::eyre!("Editor mode not yet implemented"));
     }
 
@@ -38,16 +41,16 @@ pub fn handle_again(
     // Find the entry to duplicate
     let entry_to_duplicate = find_entry_to_duplicate(
         &doing_file,
-        &sections,
-        search.as_deref(),
-        tag.as_deref(),
-        exact,
-        not,
-        &case,
+        &opts.sections,
+        opts.search.as_deref(),
+        opts.tag.as_deref(),
+        opts.exact,
+        opts.not,
+        &opts.case,
     )?;
 
     // Create new entry based on the found one
-    let new_start_time = if let Some(back_str) = &back {
+    let new_start_time = if let Some(back_str) = &opts.back {
         parse_date_string(back_str, Local::now(), Dialect::Us)
             .map_err(|_| color_eyre::eyre::eyre!("Invalid date string: {}", back_str))?
     } else {
@@ -57,7 +60,7 @@ pub fn handle_again(
     // Create new entry with same description and tags (minus @done)
     let mut new_entry = Entry::new(
         entry_to_duplicate.description.clone(),
-        in_section.clone().unwrap_or_else(|| entry_to_duplicate.section.clone()),
+        opts.in_section.clone().unwrap_or_else(|| entry_to_duplicate.section.clone()),
     );
     
     // Set the new timestamp
@@ -71,9 +74,9 @@ pub fn handle_again(
     }
 
     // Add or update note
-    if let Some(new_note) = note {
+    if let Some(new_note) = opts.note {
         new_entry.note = Some(new_note);
-    } else if ask {
+    } else if opts.ask {
         println!("Add a note:");
         println!("Enter a blank line (return twice) to end editing and save, CTRL-C to cancel");
         let mut lines = Vec::new();
@@ -97,7 +100,7 @@ pub fn handle_again(
         }
         
         // Remove trailing empty lines
-        while lines.last().map_or(false, |l| l.is_empty()) {
+        while lines.last().is_some_and(|l| l.is_empty()) {
             lines.pop();
         }
         
@@ -109,7 +112,7 @@ pub fn handle_again(
     }
 
     // Add auto tags unless disabled
-    if !noauto {
+    if !opts.noauto {
         // Add any default tags from config if implemented
     }
 
@@ -126,7 +129,7 @@ pub fn handle_again(
     
     if let Some(note_text) = &new_entry.note {
         for line in note_text.lines() {
-            println!("  {}", line);
+            println!("  {line}");
         }
     }
 
@@ -224,14 +227,13 @@ fn filter_by_search(
         let regex = if case_sensitive {
             Regex::new(pattern)?
         } else {
-            Regex::new(&format!("(?i){}", pattern))?
+            Regex::new(&format!("(?i){pattern}"))?
         };
         entries.into_iter()
             .filter(|entry| regex.is_match(&entry.description))
             .collect()
-    } else if search_query.starts_with('\'') {
+    } else if let Some(query) = search_query.strip_prefix('\'') {
         // Exact match
-        let query = &search_query[1..];
         entries.into_iter()
             .filter(|entry| {
                 if case_sensitive {
@@ -281,7 +283,7 @@ fn filter_by_tag(
                 if tag.contains('*') || tag.contains('?') {
                     // Wildcard matching
                     let pattern = tag.replace('*', ".*").replace('?', ".");
-                    if let Ok(regex) = Regex::new(&format!("^{}$", pattern)) {
+                    if let Ok(regex) = Regex::new(&format!("^{pattern}$")) {
                         for entry_tag in entry.tags.keys() {
                             if regex.is_match(entry_tag) {
                                 return true;

@@ -106,9 +106,7 @@ pub fn filter_entries(
 
     // Only timed filter
     if options.only_timed {
-        filtered = filtered.into_iter()
-            .filter(|(_, entry)| entry.is_done())
-            .collect();
+        filtered.retain(|(_, entry)| entry.is_done());
     }
 
     // Value queries
@@ -209,18 +207,18 @@ fn filter_by_search(
         let regex = if case_sensitive {
             Regex::new(pattern)?
         } else {
-            Regex::new(&format!("(?i){}", pattern))?
+            Regex::new(&format!("(?i){pattern}"))?
         };
         entries.into_iter()
             .filter(|(_, entry)| {
                 regex.is_match(&entry.description) ||
-                entry.note.as_ref().map_or(false, |n| regex.is_match(n))
+                entry.note.as_ref().is_some_and(|n| regex.is_match(n))
             })
             .collect()
     } else if search_query.starts_with('\'') || exact {
         // Exact match
-        let query = if search_query.starts_with('\'') {
-            &search_query[1..]
+        let query = if let Some(stripped) = search_query.strip_prefix('\'') {
+            stripped
         } else {
             search_query
         };
@@ -231,7 +229,7 @@ fn filter_by_search(
                 } else {
                     entry.description.eq_ignore_ascii_case(query)
                 };
-                let note_match = entry.note.as_ref().map_or(false, |n| {
+                let note_match = entry.note.as_ref().is_some_and(|n| {
                     if case_sensitive {
                         n == query
                     } else {
@@ -250,7 +248,7 @@ fn filter_by_search(
                 } else {
                     entry.description.to_lowercase().contains(&search_query.to_lowercase())
                 };
-                let note_match = entry.note.as_ref().map_or(false, |n| {
+                let note_match = entry.note.as_ref().is_some_and(|n| {
                     if case_sensitive {
                         n.contains(search_query)
                     } else {
@@ -350,7 +348,7 @@ fn has_tag(entry: &Entry, tag_pattern: &str) -> bool {
     if tag_pattern.contains('*') || tag_pattern.contains('?') {
         // Wildcard matching
         let pattern = tag_pattern.replace('*', ".*").replace('?', ".");
-        if let Ok(regex) = Regex::new(&format!("^{}$", pattern)) {
+        if let Ok(regex) = Regex::new(&format!("^{pattern}$")) {
             entry.tags.keys().any(|tag| regex.is_match(tag))
         } else {
             false

@@ -149,9 +149,9 @@ fn format_tags(tags: &std::collections::HashMap<String, Option<String>>) -> Stri
     let mut tag_strs: Vec<String> = tags.iter()
         .map(|(tag, value)| {
             if let Some(val) = value {
-                format!("@{}({})", tag, val)
+                format!("@{tag}({val})")
             } else {
-                format!("@{}", tag)
+                format!("@{tag}")
             }
         })
         .collect();
@@ -253,14 +253,13 @@ fn filter_by_search(
         let regex = if case_sensitive {
             Regex::new(pattern)?
         } else {
-            Regex::new(&format!("(?i){}", pattern))?
+            Regex::new(&format!("(?i){pattern}"))?
         };
         entries.into_iter()
             .filter(|(_, entry)| regex.is_match(&entry.description))
             .collect()
-    } else if search_query.starts_with('\'') {
+    } else if let Some(query) = search_query.strip_prefix('\'') {
         // Exact match
-        let query = &search_query[1..];
         entries.into_iter()
             .filter(|(_, entry)| {
                 if case_sensitive {
@@ -310,7 +309,7 @@ fn filter_by_tag(
                 if tag.contains('*') || tag.contains('?') {
                     // Wildcard matching
                     let pattern = tag.replace('*', ".*").replace('?', ".");
-                    if let Ok(regex) = Regex::new(&format!("^{}$", pattern)) {
+                    if let Ok(regex) = Regex::new(&format!("^{pattern}$")) {
                         for entry_tag in entry.tags.keys() {
                             if regex.is_match(entry_tag) {
                                 return true;

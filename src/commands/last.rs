@@ -24,9 +24,9 @@ pub fn handle_last() -> color_eyre::Result<()> {
                 .iter()
                 .map(|(k, v)| {
                     if let Some(val) = v {
-                        format!("@{}({})", k, val)
+                        format!("@{k}({val})")
                     } else {
-                        format!("@{}", k)
+                        format!("@{k}")
                     }
                 })
                 .collect();
@@ -34,7 +34,7 @@ pub fn handle_last() -> color_eyre::Result<()> {
         }
 
         if let Some(note) = &entry.note {
-            println!("  Note: {}", note);
+            println!("  Note: {note}");
         }
     } else {
         println!("No entries found");
@@ -49,11 +49,11 @@ fn format_duration(duration: chrono::Duration) -> String {
 
     if hours > 24 {
         let days = hours / 24;
-        format!("{} days ago", days)
+        format!("{days} days ago")
     } else if hours > 0 {
         format!("{} hours {} minutes ago", hours, minutes.abs())
     } else if minutes > 0 {
-        format!("{} minutes ago", minutes)
+        format!("{minutes} minutes ago")
     } else {
         "just now".to_string()
     }

@@ -68,7 +68,7 @@ pub fn handle_archive(
             if doing_file.sections.contains_key(target_str) {
                 vec![target_str.clone()]
             } else {
-                eprintln!("Section '{}' not found", target_str);
+                eprintln!("Section '{target_str}' not found");
                 return Ok(());
             }
         }
@@ -137,7 +137,7 @@ pub fn handle_archive(
                 // Apply search filter
                 if let Some(ref regex) = search_regex {
                     if !regex.is_match(&entry.description) && 
-                       !entry.note.as_ref().map_or(false, |n| regex.is_match(n)) {
+                       !entry.note.as_ref().is_some_and(|n| regex.is_match(n)) {
                         matches = false;
                     }
                 }
@@ -240,7 +240,7 @@ fn compile_search_regex(pattern: &str, case: &str, exact: bool) -> Result<Regex>
     let case_insensitive = parse_smart_case(case, &pattern);
     
     let regex = if case_insensitive {
-        Regex::new(&format!("(?i){}", pattern))?
+        Regex::new(&format!("(?i){pattern}"))?
     } else {
         Regex::new(&pattern)?
     };
@@ -250,15 +250,19 @@ fn compile_search_regex(pattern: &str, case: &str, exact: bool) -> Result<Regex>
 
 fn compile_tag_regex(pattern: &str) -> Result<Regex> {
     let pattern = pattern.trim_start_matches('@');
-    Ok(Regex::new(&format!("^{}$", pattern))?)
+    Ok(Regex::new(&format!("^{pattern}$"))?)
 }
 
 fn parse_smart_case(case: &str, pattern: &str) -> bool {
     match case {
         "i" | "ignore" => true,
         "c" | "case-sensitive" => false,
-        "s" | "smart" | _ => {
+        "s" | "smart" => {
             // Smart case: case-insensitive unless pattern contains uppercase
+            !pattern.chars().any(|c| c.is_uppercase())
+        }
+        _ => {
+            // Default to smart case
             !pattern.chars().any(|c| c.is_uppercase())
         }
     }

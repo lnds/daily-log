@@ -31,7 +31,7 @@ pub fn parse_taskpaper(path: &Path) -> color_eyre::Result<DoingFile> {
             }
             current_section = captures[1].to_string();
             // Ensure the section exists even if it's empty
-            doing_file.sections.entry(current_section.clone()).or_insert_with(Vec::new);
+            doing_file.sections.entry(current_section.clone()).or_default();
         } else if let Some(captures) = task_regex.captures(line) {
             if let Some(entry) = current_entry.take() {
                 doing_file.add_entry(entry);
@@ -45,7 +45,7 @@ pub fn parse_taskpaper(path: &Path) -> color_eyre::Result<DoingFile> {
             let timestamp = chrono::NaiveDateTime::parse_from_str(timestamp_str, "%Y-%m-%d %H:%M")
                 .ok()
                 .and_then(|naive| Local.from_local_datetime(&naive).single())
-                .unwrap_or_else(|| Local::now());
+                .unwrap_or_else(Local::now);
                 
             // Parse UUID
             let uuid = Uuid::parse_str(uuid_str).unwrap_or_else(|_| Uuid::new_v4());

@@ -105,7 +105,7 @@ pub fn handle_on(
     let entries = filter_entries(&doing_file, &filter_opts)?;
 
     if entries.is_empty() {
-        println!("No entries found for {}", date_string);
+        println!("No entries found for {date_string}");
         return Ok(());
     }
 

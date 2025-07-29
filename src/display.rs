@@ -73,13 +73,11 @@ fn display_default(entries: &[(String, Entry)], options: &DisplayOptions) -> col
 
     let now = Local::now();
     let mut total_duration = chrono::Duration::zero();
-    let mut _shown_count = 0;
 
     // Calculate maximum width for description
     let max_desc_width = 50;
 
-    for (section, entry) in entries {
-        _shown_count += 1;
+    for (section, entry) in entries.iter() {
 
         // Format date
         let date_str = format_date(&entry.timestamp, &now);
@@ -97,12 +95,12 @@ fn display_default(entries: &[(String, Entry)], options: &DisplayOptions) -> col
         };
 
         if let Some(d) = duration {
-            total_duration = total_duration + d;
+            total_duration += d;
         }
 
         // Build section string
         let section_str = if section != "Currently" {
-            format!("[{}]", section)
+            format!("[{section}]")
         } else {
             String::new()
         };
@@ -128,13 +126,13 @@ fn display_default(entries: &[(String, Entry)], options: &DisplayOptions) -> col
         };
 
         // Print main line
-        print!("{:>10} {:>5} ║ ", date_str, time_str);
+        print!("{date_str:>10} {time_str:>5} ║ ");
 
         // Print description, section and duration
         if duration_str.is_empty() {
-            println!("{:<width$} {}", desc, section_str, width = max_desc_width);
+            println!("{desc:<max_desc_width$} {section_str}");
         } else {
-            println!("{:<width$} {}{}", desc, section_str, duration_str, width = max_desc_width);
+            println!("{desc:<max_desc_width$} {section_str}{duration_str}");
         }
 
         // Print notes if any
@@ -180,9 +178,9 @@ fn display_csv(entries: &[(String, Entry)]) -> color_eyre::Result<()> {
         let tags_str = entry.tags.iter()
             .map(|(k, v)| {
                 if let Some(val) = v {
-                    format!("@{}({})", k, val)
+                    format!("@{k}({val})")
                 } else {
-                    format!("@{}", k)
+                    format!("@{k}")
                 }
             })
             .collect::<Vec<_>>()
@@ -224,12 +222,12 @@ fn display_markdown(entries: &[(String, Entry)], options: &DisplayOptions) -> co
         // Tags
         let tags = format_tags(&entry.tags, options);
         if !tags.is_empty() {
-            print!(" {}", tags);
+            print!(" {tags}");
         }
 
         // Section
         if section != "Currently" {
-            print!(" _[{}]_", section);
+            print!(" _[{section}]_");
         }
 
         println!();
@@ -237,7 +235,7 @@ fn display_markdown(entries: &[(String, Entry)], options: &DisplayOptions) -> co
         // Note
         if let Some(note) = &entry.note {
             for line in note.lines() {
-                println!("  {}", line);
+                println!("  {line}");
             }
         }
     }
@@ -299,7 +297,7 @@ fn display_taskpaper(entries: &[(String, Entry)]) -> color_eyre::Result<()> {
 
     // Output each section
     for (section, entries) in sections {
-        println!("{}:", section);
+        println!("{section}:");
         for entry in entries {
             print!("- {} | {}", 
                 entry.timestamp.format("%Y-%m-%d %H:%M"), 
@@ -308,9 +306,9 @@ fn display_taskpaper(entries: &[(String, Entry)]) -> color_eyre::Result<()> {
 
             // Add tags
             for (tag, value) in &entry.tags {
-                print!(" @{}", tag);
+                print!(" @{tag}");
                 if let Some(v) = value {
-                    print!("({})", v);
+                    print!("({v})");
                 }
             }
 
@@ -319,7 +317,7 @@ fn display_taskpaper(entries: &[(String, Entry)]) -> color_eyre::Result<()> {
             // Add note
             if let Some(note) = &entry.note {
                 for line in note.lines() {
-                    println!("  {}", line);
+                    println!("  {line}");
                 }
             }
         }
@@ -361,12 +359,12 @@ fn display_timeline(entries: &[(String, Entry)], options: &DisplayOptions) -> co
         print!("│ {}", entry.description);
         let tags = format_tags(&entry.tags, options);
         if !tags.is_empty() {
-            print!(" {}", tags);
+            print!(" {tags}");
         }
 
         // Section
         if section != "Currently" {
-            print!(" [{}]", section);
+            print!(" [{section}]");
         }
 
         println!();
@@ -374,7 +372,7 @@ fn display_timeline(entries: &[(String, Entry)], options: &DisplayOptions) -> co
         // Note
         if let Some(note) = &entry.note {
             for line in note.lines() {
-                println!("      │   {}", line);
+                println!("      │   {line}");
             }
         }
     }
@@ -399,16 +397,14 @@ fn format_date(timestamp: &DateTime<Local>, now: &DateTime<Local>) -> String {
 }
 
 fn calculate_duration(entry: &Entry) -> (String, Option<chrono::Duration>) {
-    if let Some(done_value) = entry.tags.get("done") {
-        if let Some(done_str) = done_value {
-            if let Ok(done_time) = chrono::DateTime::parse_from_str(
-                &format!("{} +0000", done_str),
-                "%Y-%m-%d %H:%M %z",
-            ) {
-                let duration = done_time.with_timezone(&Local) - entry.timestamp;
-                let duration_str = format!(" ({})", format_duration(&duration));
-                return (duration_str, Some(duration));
-            }
+    if let Some(Some(done_str)) = entry.tags.get("done") {
+        if let Ok(done_time) = chrono::DateTime::parse_from_str(
+            &format!("{done_str} +0000"),
+            "%Y-%m-%d %H:%M %z",
+        ) {
+            let duration = done_time.with_timezone(&Local) - entry.timestamp;
+            let duration_str = format!(" ({})", format_duration(&duration));
+            return (duration_str, Some(duration));
         }
     }
     (String::new(), None)
@@ -421,11 +417,11 @@ fn format_duration(duration: &chrono::Duration) -> String {
     let seconds = total_seconds % 60;
 
     if hours > 0 {
-        format!("{}h{}m", hours, minutes)
+        format!("{hours}h{minutes}m")
     } else if minutes > 0 {
-        format!("{}m{}s", minutes, seconds)
+        format!("{minutes}m{seconds}s")
     } else {
-        format!("{}s", seconds)
+        format!("{seconds}s")
     }
 }
 
@@ -455,9 +451,9 @@ fn format_tags(tags: &HashMap<String, Option<String>>, options: &DisplayOptions)
     tag_vec.iter()
         .map(|(tag, value)| {
             if let Some(v) = value {
-                format!("@{}({})", tag, v)
+                format!("@{tag}({v})")
             } else {
-                format!("@{}", tag)
+                format!("@{tag}")
             }
         })
         .collect::<Vec<_>>()
@@ -467,7 +463,7 @@ fn format_tags(tags: &HashMap<String, Option<String>>, options: &DisplayOptions)
 fn highlight_matches(text: &str, query: &str) -> String {
     // Simple highlighting with ANSI codes
     // In a real implementation, this would handle regex and case sensitivity
-    text.replace(query, &format!("\x1b[33m{}\x1b[0m", query))
+    text.replace(query, &format!("\x1b[33m{query}\x1b[0m"))
 }
 
 fn escape_csv(s: &str) -> String {

@@ -111,7 +111,8 @@ pub fn handle_show(
     // Sort entries
     match sort.as_str() {
         "asc" => entries.sort_by(|a, b| a.1.timestamp.cmp(&b.1.timestamp)),
-        "desc" | _ => entries.sort_by(|a, b| b.1.timestamp.cmp(&a.1.timestamp)),
+        "desc" => entries.sort_by(|a, b| b.1.timestamp.cmp(&a.1.timestamp)),
+        _ => entries.sort_by(|a, b| b.1.timestamp.cmp(&a.1.timestamp)),
     }
 
     // Apply age filter (newest/oldest)

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::test_utils::test_utils::{TestContext, TestEntry};
-    use crate::commands::handle_delete;
+    use crate::commands::{handle_delete, DeleteOptions};
     use crate::storage::parse_taskpaper;
     use chrono::{Local, Duration};
     
@@ -17,16 +17,16 @@ mod tests {
         ctx.create_doing_file_with_entries(entries)?;
         
         // Delete last entry
-        handle_delete(
-            1,           // count
-            false,       // interactive
-            false,       // not
-            vec![],      // sections (empty = Currently)
-            None,        // search
-            None,        // tag
-            false,       // exact
-            true,        // force
-        )?;
+        handle_delete(DeleteOptions {
+            count: 1,
+            interactive: false,
+            not: false,
+            sections: vec![],
+            search: None,
+            tag: None,
+            exact: false,
+            force: true,
+        })?;
         
         let doing_file = parse_taskpaper(&ctx.doing_file_path)?;
         let entries = doing_file.sections.get("Currently").unwrap();
@@ -52,16 +52,16 @@ mod tests {
         ctx.create_doing_file_with_entries(entries)?;
         
         // Delete last 2 entries
-        handle_delete(
-            2,           // count
-            false,       // interactive
-            false,       // not
-            vec![],      // sections
-            None,        // search
-            None,        // tag
-            false,       // exact
-            true,        // force
-        )?;
+        handle_delete(DeleteOptions {
+            count: 2,
+            interactive: false,
+            not: false,
+            sections: vec![],
+            search: None,
+            tag: None,
+            exact: false,
+            force: true,
+        })?;
         
         let doing_file = parse_taskpaper(&ctx.doing_file_path)?;
         let entries = doing_file.sections.get("Currently").unwrap();
@@ -89,16 +89,16 @@ mod tests {
         ctx.create_doing_file_with_entries(entries)?;
         
         // Delete entries with urgent tag
-        handle_delete(
-            10,                          // count (high number to get all matching)
-            false,                       // interactive
-            false,                       // not
-            vec![],                      // sections
-            None,                        // search
-            Some("urgent".to_string()),  // tag
-            false,                       // exact
-            true,                        // force
-        )?;
+        handle_delete(DeleteOptions {
+            count: 10,
+            interactive: false,
+            not: false,
+            sections: vec![],
+            search: None,
+            tag: Some("urgent".to_string()),
+            exact: false,
+            force: true,
+        })?;
         
         let doing_file = parse_taskpaper(&ctx.doing_file_path)?;
         let entries = doing_file.sections.get("Currently").unwrap();
@@ -123,16 +123,16 @@ mod tests {
         ctx.create_doing_file_with_entries(entries)?;
         
         // Delete entries matching search
-        handle_delete(
-            10,                       // count
-            false,                    // interactive
-            false,                    // not
-            vec![],                   // sections
-            Some("bug".to_string()),  // search
-            None,                     // tag
-            false,                    // exact
-            true,                     // force
-        )?;
+        handle_delete(DeleteOptions {
+            count: 10,
+            interactive: false,
+            not: false,
+            sections: vec![],
+            search: Some("bug".to_string()),
+            tag: None,
+            exact: false,
+            force: true,
+        })?;
         
         let doing_file = parse_taskpaper(&ctx.doing_file_path)?;
         let entries = doing_file.sections.get("Currently").unwrap();
@@ -158,16 +158,16 @@ mod tests {
         ctx.create_doing_file_with_entries(entries)?;
         
         // Delete from Projects section
-        handle_delete(
-            1,                              // count
-            false,                          // interactive
-            false,                          // not
-            vec!["Projects".to_string()],   // sections
-            None,                           // search
-            None,                           // tag
-            false,                          // exact
-            true,                           // force
-        )?;
+        handle_delete(DeleteOptions {
+            count: 1,
+            interactive: false,
+            not: false,
+            sections: vec!["Projects".to_string()],
+            search: None,
+            tag: None,
+            exact: false,
+            force: true,
+        })?;
         
         let doing_file = parse_taskpaper(&ctx.doing_file_path)?;
         

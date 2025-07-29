@@ -3,17 +3,20 @@ use chrono::{Local, DateTime};
 use regex::Regex;
 use std::io::{self, Write};
 
-pub fn handle_delete(
-    count: usize,
-    interactive: bool,
-    not: bool,
-    sections: Vec<String>,
-    search: Option<String>,
-    tag: Option<String>,
-    exact: bool,
-    force: bool,
-) -> color_eyre::Result<()> {
-    if interactive {
+#[derive(Debug)]
+pub struct DeleteOptions {
+    pub count: usize,
+    pub interactive: bool,
+    pub not: bool,
+    pub sections: Vec<String>,
+    pub search: Option<String>,
+    pub tag: Option<String>,
+    pub exact: bool,
+    pub force: bool,
+}
+
+pub fn handle_delete(opts: DeleteOptions) -> color_eyre::Result<()> {
+    if opts.interactive {
         return Err(color_eyre::eyre::eyre!("Interactive mode not yet implemented"));
     }
 
@@ -23,10 +26,10 @@ pub fn handle_delete(
     let mut doing_file = parse_taskpaper(&doing_file_path)?;
     
     // Determine which sections to work with
-    let target_sections: Vec<String> = if sections.is_empty() {
+    let target_sections: Vec<String> = if opts.sections.is_empty() {
         vec!["Currently".to_string()]
     } else {
-        sections
+        opts.sections
     };
     
     // Collect all entries from target sections
@@ -46,17 +49,17 @@ pub fn handle_delete(
     let mut filtered_entries = all_entries;
     
     // Apply search filter
-    if let Some(search_query) = &search {
-        filtered_entries = filter_by_search(filtered_entries, search_query, exact)?;
+    if let Some(search_query) = &opts.search {
+        filtered_entries = filter_by_search(filtered_entries, search_query, opts.exact)?;
     }
     
     // Apply tag filter
-    if let Some(tag_query) = &tag {
+    if let Some(tag_query) = &opts.tag {
         filtered_entries = filter_by_tag(&doing_file, filtered_entries, tag_query)?;
     }
     
     // Apply NOT filter if specified
-    if not {
+    if opts.not {
         // Get all entries again and remove the filtered ones
         let mut all_entries_again: Vec<(String, DateTime<Local>, String)> = Vec::new();
         for section in &target_sections {
@@ -74,14 +77,14 @@ pub fn handle_delete(
     }
     
     // Take only the requested count
-    let entries_to_delete: Vec<_> = filtered_entries.into_iter().take(count).collect();
+    let entries_to_delete: Vec<_> = filtered_entries.into_iter().take(opts.count).collect();
     
     if entries_to_delete.is_empty() {
         return Err(color_eyre::eyre::eyre!("No matching entries found to delete"));
     }
     
     // Confirm deletion if not forced
-    if !force {
+    if !opts.force {
         println!("The following entries will be deleted:");
         for (section, timestamp, description) in &entries_to_delete {
             println!("  {} | {} [{}]", timestamp.format("%Y-%m-%d %H:%M"), description, section);
@@ -137,9 +140,8 @@ fn filter_by_search(
         entries.into_iter()
             .filter(|(_, _, desc)| regex.is_match(desc))
             .collect()
-    } else if search_query.starts_with('\'') {
+    } else if let Some(query) = search_query.strip_prefix('\'') {
         // Exact match
-        let query = &search_query[1..];
         entries.into_iter()
             .filter(|(_, _, desc)| desc == query)
             .collect()
@@ -177,7 +179,7 @@ fn filter_by_tag(
                             if tag.contains('*') || tag.contains('?') {
                                 // Wildcard matching
                                 let pattern = tag.replace('*', ".*").replace('?', ".");
-                                if let Ok(regex) = Regex::new(&format!("^{}$", pattern)) {
+                                if let Ok(regex) = Regex::new(&format!("^{pattern}$")) {
                                     for entry_tag in entry.tags.keys() {
                                         if regex.is_match(entry_tag) {
                                             return true;

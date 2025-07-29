@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::test_utils::test_utils::*;
-    use crate::commands::tags::handle_tags;
+    use crate::commands::tags::{handle_tags, TagsFilterOptions, TagsDisplayOptions};
     
     #[test]
     fn test_tags_list_all() {
@@ -12,9 +12,23 @@ mod tests {
         
         // List all tags (basic functionality test - output goes to stdout)
         let result = handle_tags(
-            None, "pattern".to_string(), false, "smart".to_string(),
-            false, false, false, "asc".to_string(), vec![], None,
-            "name".to_string(), None, vec![], false
+            TagsFilterOptions {
+                section: vec![],
+                search: None,
+                tag: None,
+                val: vec![],
+                case: "smart".to_string(),
+                exact: false,
+                not: false,
+            },
+            TagsDisplayOptions {
+                max_count: None,
+                counts: false,
+                line: false,
+                order: "asc".to_string(),
+                sort: "name".to_string(),
+            },
+            false, // interactive
         );
         assert!(result.is_ok());
     }
@@ -28,9 +42,23 @@ mod tests {
         
         // List tags with counts
         let result = handle_tags(
-            None, "pattern".to_string(), true, "smart".to_string(),
-            false, false, false, "asc".to_string(), vec![], None,
-            "name".to_string(), None, vec![], false
+            TagsFilterOptions {
+                section: vec![],
+                search: None,
+                tag: None,
+                val: vec![],
+                case: "smart".to_string(),
+                exact: false,
+                not: false,
+            },
+            TagsDisplayOptions {
+                max_count: None,
+                counts: true,
+                line: false,
+                order: "asc".to_string(),
+                sort: "name".to_string(),
+            },
+            false,
         );
         assert!(result.is_ok());
     }
@@ -44,9 +72,23 @@ mod tests {
         
         // List tags only from Work section
         let result = handle_tags(
-            None, "pattern".to_string(), false, "smart".to_string(),
-            false, false, false, "asc".to_string(), vec!["Work".to_string()], None,
-            "name".to_string(), None, vec![], false
+            TagsFilterOptions {
+                section: vec!["Work".to_string()],
+                search: None,
+                tag: None,
+                val: vec![],
+                case: "smart".to_string(),
+                exact: false,
+                not: false,
+            },
+            TagsDisplayOptions {
+                max_count: None,
+                counts: false,
+                line: false,
+                order: "asc".to_string(),
+                sort: "name".to_string(),
+            },
+            false,
         );
         assert!(result.is_ok());
     }
@@ -60,9 +102,23 @@ mod tests {
         
         // List tags only from entries containing "bug"
         let result = handle_tags(
-            None, "pattern".to_string(), false, "smart".to_string(),
-            false, false, false, "asc".to_string(), vec![], Some("bug".to_string()),
-            "name".to_string(), None, vec![], false
+            TagsFilterOptions {
+                section: vec![],
+                search: Some("bug".to_string()),
+                tag: None,
+                val: vec![],
+                case: "smart".to_string(),
+                exact: false,
+                not: false,
+            },
+            TagsDisplayOptions {
+                max_count: None,
+                counts: false,
+                line: false,
+                order: "asc".to_string(),
+                sort: "name".to_string(),
+            },
+            false,
         );
         assert!(result.is_ok());
     }
@@ -76,9 +132,23 @@ mod tests {
         
         // List only 2 tags
         let result = handle_tags(
-            Some(2), "pattern".to_string(), false, "smart".to_string(),
-            false, false, false, "asc".to_string(), vec![], None,
-            "name".to_string(), None, vec![], false
+            TagsFilterOptions {
+                section: vec![],
+                search: None,
+                tag: None,
+                val: vec![],
+                case: "smart".to_string(),
+                exact: false,
+                not: false,
+            },
+            TagsDisplayOptions {
+                max_count: Some(2),
+                counts: false,
+                line: false,
+                order: "asc".to_string(),
+                sort: "name".to_string(),
+            },
+            false,
         );
         assert!(result.is_ok());
     }
@@ -92,9 +162,23 @@ mod tests {
         
         // Sort by count (descending)
         let result = handle_tags(
-            None, "pattern".to_string(), true, "smart".to_string(),
-            false, false, false, "desc".to_string(), vec![], None,
-            "count".to_string(), None, vec![], false
+            TagsFilterOptions {
+                section: vec![],
+                search: None,
+                tag: None,
+                val: vec![],
+                case: "smart".to_string(),
+                exact: false,
+                not: false,
+            },
+            TagsDisplayOptions {
+                max_count: None,
+                counts: true,
+                line: false,
+                order: "desc".to_string(),
+                sort: "count".to_string(),
+            },
+            false,
         );
         assert!(result.is_ok());
     }
@@ -108,9 +192,23 @@ mod tests {
         
         // Display in line format
         let result = handle_tags(
-            None, "pattern".to_string(), false, "smart".to_string(),
-            false, true, false, "asc".to_string(), vec![], None,
-            "name".to_string(), None, vec![], false
+            TagsFilterOptions {
+                section: vec![],
+                search: None,
+                tag: None,
+                val: vec![],
+                case: "smart".to_string(),
+                exact: false,
+                not: false,
+            },
+            TagsDisplayOptions {
+                max_count: None,
+                counts: false,
+                line: true,
+                order: "asc".to_string(),
+                sort: "name".to_string(),
+            },
+            false,
         );
         assert!(result.is_ok());
     }
@@ -122,9 +220,23 @@ mod tests {
         
         // List tags from empty file
         let result = handle_tags(
-            None, "pattern".to_string(), false, "smart".to_string(),
-            false, false, false, "asc".to_string(), vec![], None,
-            "name".to_string(), None, vec![], false
+            TagsFilterOptions {
+                section: vec![],
+                search: None,
+                tag: None,
+                val: vec![],
+                case: "smart".to_string(),
+                exact: false,
+                not: false,
+            },
+            TagsDisplayOptions {
+                max_count: None,
+                counts: false,
+                line: false,
+                order: "asc".to_string(),
+                sort: "name".to_string(),
+            },
+            false,
         );
         assert!(result.is_ok());
     }

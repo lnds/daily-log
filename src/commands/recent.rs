@@ -34,17 +34,13 @@ pub fn handle_recent(count: usize, section: Option<String>) -> color_eyre::Resul
         let section_str = format!("[{:<width$}]", entry.section, width = section_width - 2);
         
         // Calculate duration if done with a timestamp
-        let duration_str = if let Some(done_value) = entry.tags.get("done") {
-            if let Some(done_time_str) = done_value {
-                // Parse done timestamp
-                if let Ok(done_time) = chrono::NaiveDateTime::parse_from_str(done_time_str, "%Y-%m-%d %H:%M") {
-                    let done_local = Local.from_local_datetime(&done_time).single().unwrap_or_else(|| Local::now());
-                    let duration = done_local.timestamp() - entry.timestamp.timestamp();
-                    if duration > 0 {
-                        format!(" {}", format_duration(Duration::seconds(duration)))
-                    } else {
-                        String::new()
-                    }
+        let duration_str = if let Some(Some(done_time_str)) = entry.tags.get("done") {
+            // Parse done timestamp
+            if let Ok(done_time) = chrono::NaiveDateTime::parse_from_str(done_time_str, "%Y-%m-%d %H:%M") {
+                let done_local = Local.from_local_datetime(&done_time).single().unwrap_or_else(Local::now);
+                let duration = done_local.timestamp() - entry.timestamp.timestamp();
+                if duration > 0 {
+                    format!(" {}", format_duration(Duration::seconds(duration)))
                 } else {
                     String::new()
                 }
@@ -58,9 +54,9 @@ pub fn handle_recent(count: usize, section: Option<String>) -> color_eyre::Resul
         // Build description with tags
         let mut desc = entry.description.clone();
         for (tag, value) in &entry.tags {
-            desc.push_str(&format!(" @{}", tag));
+            desc.push_str(&format!(" @{tag}"));
             if let Some(v) = value {
-                desc.push_str(&format!("({})", v));
+                desc.push_str(&format!("({v})"));
             }
         }
         
@@ -72,13 +68,13 @@ pub fn handle_recent(count: usize, section: Option<String>) -> color_eyre::Resul
         };
         
         // Print main line
-        print!("{:>10} {:>5} ║ ", date_str, time_str);
+        print!("{date_str:>10} {time_str:>5} ║ ");
         
         // Print description, section and duration
         if duration_str.is_empty() {
-            println!("{:<width$} {}", desc, section_str, width = max_desc_width);
+            println!("{desc:<max_desc_width$} {section_str}");
         } else {
-            println!("{:<width$} {}{}", desc, section_str, duration_str, width = max_desc_width);
+            println!("{desc:<max_desc_width$} {section_str}{duration_str}");
         }
         
         // Print notes if any
@@ -114,5 +110,5 @@ fn format_duration(duration: Duration) -> String {
     let minutes = (total_seconds % 3600) / 60;
     let seconds = total_seconds % 60;
     
-    format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
+    format!("{hours:02}:{minutes:02}:{seconds:02}")
 }

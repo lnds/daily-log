@@ -186,7 +186,7 @@ fn main() -> color_eyre::Result<()> {
             exact,
             force,
         }) => {
-            commands::handle_delete(
+            commands::handle_delete(commands::DeleteOptions {
                 count,
                 interactive,
                 not,
@@ -195,7 +195,7 @@ fn main() -> color_eyre::Result<()> {
                 tag,
                 exact,
                 force,
-            )?;
+            })?;
         }
         Some(Commands::Again {
             noauto,
@@ -214,11 +214,11 @@ fn main() -> color_eyre::Result<()> {
             val,
             exact,
         }) => {
-            commands::handle_again(
+            commands::handle_again(commands::AgainOptions {
                 noauto,
                 ask,
                 back,
-                bool_op,
+                _bool_op: bool_op,
                 case,
                 editor,
                 interactive,
@@ -228,9 +228,9 @@ fn main() -> color_eyre::Result<()> {
                 sections,
                 search,
                 tag,
-                val,
+                _val: val,
                 exact,
-            )?;
+            })?;
         }
         Some(Commands::Tag {
             tags,
@@ -276,9 +276,9 @@ fn main() -> color_eyre::Result<()> {
             )?;
         }
         Some(Commands::Note {
-            note,
+            note: _,
             ask,
-            bool_op,
+            bool_op: _,
             case,
             editor,
             interactive,
@@ -291,19 +291,21 @@ fn main() -> color_eyre::Result<()> {
             exact,
         }) => {
             commands::handle_note(
-                note,
-                ask,
-                bool_op,
-                case,
-                editor,
+                commands::NoteFilterOptions {
+                    sections,
+                    search,
+                    tag,
+                    case,
+                    exact,
+                    not,
+                },
+                commands::NoteOptions {
+                    note: val,
+                    ask,
+                    editor,
+                    remove,
+                },
                 interactive,
-                not,
-                remove,
-                sections,
-                search,
-                tag,
-                val,
-                exact,
             )?;
         }
         Some(Commands::Resume {
@@ -324,11 +326,11 @@ fn main() -> color_eyre::Result<()> {
             exact,
         }) => {
             // Resume is an alias for again
-            commands::handle_again(
+            commands::handle_again(commands::AgainOptions {
                 noauto,
                 ask,
                 back,
-                bool_op,
+                _bool_op: bool_op,
                 case,
                 editor,
                 interactive,
@@ -338,9 +340,9 @@ fn main() -> color_eyre::Result<()> {
                 sections,
                 search,
                 tag,
-                val,
+                _val: val,
                 exact,
-            )?;
+            })?;
         }
         Some(Commands::Mark {
             bool_op,
@@ -850,7 +852,7 @@ fn main() -> color_eyre::Result<()> {
         }
         Some(Commands::Tags {
             max_count,
-            bool_op,
+            bool_op: _,
             counts,
             case,
             interactive,
@@ -865,20 +867,23 @@ fn main() -> color_eyre::Result<()> {
             exact,
         }) => {
             commands::handle_tags(
-                max_count,
-                bool_op,
-                counts,
-                case,
+                commands::tags::TagsFilterOptions {
+                    section,
+                    search,
+                    tag,
+                    val,
+                    case,
+                    exact,
+                    not,
+                },
+                commands::tags::TagsDisplayOptions {
+                    max_count,
+                    counts,
+                    line,
+                    order,
+                    sort,
+                },
                 interactive,
-                line,
-                not,
-                order,
-                section,
-                search,
-                sort,
-                tag,
-                val,
-                exact,
             )?;
         }
         None => {

@@ -26,6 +26,12 @@ pub struct App {
     show_detail: bool,
 }
 
+impl Default for App {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl App {
     /// Construct a new instance of [`App`].
     pub fn new() -> Self {
@@ -53,7 +59,7 @@ impl App {
                 self.error = None;
             }
             Err(e) => {
-                self.error = Some(format!("Failed to load entries: {}", e));
+                self.error = Some(format!("Failed to load entries: {e}"));
             }
         }
     }
@@ -106,9 +112,9 @@ impl App {
                 spans.push(Span::raw(" "));
                 spans.push(Span::styled(
                     if let Some(v) = value {
-                        format!("@{}({})", tag, v)
+                        format!("@{tag}({v})")
                     } else {
-                        format!("@{}", tag)
+                        format!("@{tag}")
                     },
                     Style::default().fg(Color::Green),
                 ));
@@ -122,24 +128,22 @@ impl App {
             ));
 
             // Add elapsed time if done
-            if let Some(done_value) = entry.tags.get("done") {
-                if let Some(done_time_str) = done_value {
-                    // Parse done timestamp
-                    if let Ok(done_time) = chrono::NaiveDateTime::parse_from_str(done_time_str, "%Y-%m-%d %H:%M") {
-                        let done_local = Local.from_local_datetime(&done_time).single().unwrap_or_else(|| Local::now());
-                        let duration = done_local.timestamp() - entry.timestamp.timestamp();
-                        if duration > 0 {
-                            let elapsed = Duration::seconds(duration);
-                            let hours = elapsed.num_hours();
-                            let minutes = (elapsed.num_minutes() % 60) as u32;
-                            let seconds = (elapsed.num_seconds() % 60) as u32;
-                            
-                            spans.push(Span::raw(" "));
-                            spans.push(Span::styled(
-                                format!("{:02}:{:02}:{:02}", hours, minutes, seconds),
-                                Style::default().fg(Color::Cyan),
-                            ));
-                        }
+            if let Some(Some(done_time_str)) = entry.tags.get("done") {
+                // Parse done timestamp
+                if let Ok(done_time) = chrono::NaiveDateTime::parse_from_str(done_time_str, "%Y-%m-%d %H:%M") {
+                    let done_local = Local.from_local_datetime(&done_time).single().unwrap_or_else(Local::now);
+                    let duration = done_local.timestamp() - entry.timestamp.timestamp();
+                    if duration > 0 {
+                        let elapsed = Duration::seconds(duration);
+                        let hours = elapsed.num_hours();
+                        let minutes = (elapsed.num_minutes() % 60) as u32;
+                        let seconds = (elapsed.num_seconds() % 60) as u32;
+                        
+                        spans.push(Span::raw(" "));
+                        spans.push(Span::styled(
+                            format!("{hours:02}:{minutes:02}:{seconds:02}"),
+                            Style::default().fg(Color::Cyan),
+                        ));
                     }
                 }
             }
@@ -171,7 +175,7 @@ impl App {
 
         // Help/status bar
         let help_text = if let Some(error) = &self.error {
-            format!("Error: {} | Press 'q' to quit, 'r' to reload", error)
+            format!("Error: {error} | Press 'q' to quit, 'r' to reload")
         } else {
             "q: quit | ↑/↓: navigate | Enter: details | d: delete | r: reload".to_string()
         };
@@ -221,27 +225,25 @@ impl App {
             ];
 
             // Add elapsed time if done
-            if let Some(done_value) = entry.tags.get("done") {
-                if let Some(done_time_str) = done_value {
-                    // Parse done timestamp
-                    if let Ok(done_time) = chrono::NaiveDateTime::parse_from_str(done_time_str, "%Y-%m-%d %H:%M") {
-                        let done_local = Local.from_local_datetime(&done_time).single().unwrap_or_else(|| Local::now());
-                        let duration = done_local.timestamp() - entry.timestamp.timestamp();
-                        if duration > 0 {
-                            let elapsed = Duration::seconds(duration);
-                            let hours = elapsed.num_hours();
-                            let minutes = (elapsed.num_minutes() % 60) as u32;
-                            let seconds = (elapsed.num_seconds() % 60) as u32;
-                            
-                            text.push(Line::from(""));
-                            text.push(Line::from(vec![
-                                Span::styled("Elapsed Time: ", Style::default().add_modifier(Modifier::BOLD)),
-                                Span::styled(
-                                    format!("{:02}:{:02}:{:02}", hours, minutes, seconds),
-                                    Style::default().fg(Color::Cyan),
-                                ),
-                            ]));
-                        }
+            if let Some(Some(done_time_str)) = entry.tags.get("done") {
+                // Parse done timestamp
+                if let Ok(done_time) = chrono::NaiveDateTime::parse_from_str(done_time_str, "%Y-%m-%d %H:%M") {
+                    let done_local = Local.from_local_datetime(&done_time).single().unwrap_or_else(Local::now);
+                    let duration = done_local.timestamp() - entry.timestamp.timestamp();
+                    if duration > 0 {
+                        let elapsed = Duration::seconds(duration);
+                        let hours = elapsed.num_hours();
+                        let minutes = (elapsed.num_minutes() % 60) as u32;
+                        let seconds = (elapsed.num_seconds() % 60) as u32;
+                        
+                        text.push(Line::from(""));
+                        text.push(Line::from(vec![
+                            Span::styled("Elapsed Time: ", Style::default().add_modifier(Modifier::BOLD)),
+                            Span::styled(
+                                format!("{hours:02}:{minutes:02}:{seconds:02}"),
+                                Style::default().fg(Color::Cyan),
+                            ),
+                        ]));
                     }
                 }
             }
@@ -255,9 +257,9 @@ impl App {
                         Span::raw("  "),
                         Span::styled(
                             if let Some(v) = value {
-                                format!("@{}({})", tag, v)
+                                format!("@{tag}({v})")
                             } else {
-                                format!("@{}", tag)
+                                format!("@{tag}")
                             },
                             Style::default().fg(Color::Green),
                         ),
@@ -383,7 +385,7 @@ impl App {
                     if deleted {
                         // Save the file
                         if let Err(e) = save_taskpaper(&doing_file) {
-                            self.error = Some(format!("Failed to save after deletion: {}", e));
+                            self.error = Some(format!("Failed to save after deletion: {e}"));
                         } else {
                             // Remove from UI and adjust selection
                             self.entries.remove(self.selected);
@@ -397,7 +399,7 @@ impl App {
                     }
                 }
                 Err(e) => {
-                    self.error = Some(format!("Failed to load file for deletion: {}", e));
+                    self.error = Some(format!("Failed to load file for deletion: {e}"));
                 }
             }
         }

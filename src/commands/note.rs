@@ -3,26 +3,34 @@ use crate::storage::{Config, parse_taskpaper, save_taskpaper};
 use regex::Regex;
 use std::io;
 
+#[derive(Debug)]
+pub struct NoteFilterOptions {
+    pub sections: Vec<String>,
+    pub search: Option<String>,
+    pub tag: Option<String>,
+    pub case: String,
+    pub exact: bool,
+    pub not: bool,
+}
+
+#[derive(Debug)]
+pub struct NoteOptions {
+    pub note: Vec<String>,
+    pub ask: bool,
+    pub editor: bool,
+    pub remove: bool,
+}
+
 pub fn handle_note(
-    note: Vec<String>,
-    ask: bool,
-    _bool_op: String,
-    case: String,
-    editor: bool,
+    filter_opts: NoteFilterOptions,
+    note_opts: NoteOptions,
     interactive: bool,
-    not: bool,
-    remove: bool,
-    sections: Vec<String>,
-    search: Option<String>,
-    tag: Option<String>,
-    _val: Vec<String>,
-    exact: bool,
 ) -> color_eyre::Result<()> {
     if interactive {
         return Err(color_eyre::eyre::eyre!("Interactive mode not yet implemented"));
     }
 
-    if editor {
+    if note_opts.editor {
         return Err(color_eyre::eyre::eyre!("Editor mode not yet implemented"));
     }
 
@@ -34,18 +42,18 @@ pub fn handle_note(
     // Find the entry to modify
     let entry_to_modify = find_entry_to_modify(
         &doing_file,
-        &sections,
-        search.as_deref(),
-        tag.as_deref(),
-        exact,
-        not,
-        &case,
+        &filter_opts.sections,
+        filter_opts.search.as_deref(),
+        filter_opts.tag.as_deref(),
+        filter_opts.exact,
+        filter_opts.not,
+        &filter_opts.case,
     )?;
 
     // Get the note text
-    let note_text = if !note.is_empty() {
-        Some(note.join(" "))
-    } else if ask {
+    let note_text = if !note_opts.note.is_empty() {
+        Some(note_opts.note.join(" "))
+    } else if note_opts.ask {
         println!("Add a note:");
         println!("Enter a blank line (return twice) to end editing and save, CTRL-C to cancel");
         let mut lines = Vec::new();
@@ -69,7 +77,7 @@ pub fn handle_note(
         }
         
         // Remove trailing empty lines
-        while lines.last().map_or(false, |l| l.is_empty()) {
+        while lines.last().is_some_and(|l| l.is_empty()) {
             lines.pop();
         }
         
@@ -90,30 +98,30 @@ pub fn handle_note(
     if let Some(entries) = doing_file.sections.get_mut(&target_section) {
         for entry in entries.iter_mut() {
             if entry.uuid == target_uuid {
-                if remove && note_text.is_none() {
+                if note_opts.remove && note_text.is_none() {
                     // Remove note
                     entry.note = None;
                     println!("Note removed from: {}", entry.description);
-                } else if remove && note_text.is_some() {
+                } else if note_opts.remove && note_text.is_some() {
                     // Replace note
                     entry.note = note_text.clone();
                     println!("Note replaced for: {}", entry.description);
                     if let Some(ref new_note) = entry.note {
                         for line in new_note.lines() {
-                            println!("  {}", line);
+                            println!("  {line}");
                         }
                     }
                 } else if let Some(ref new_note) = note_text {
                     // Append to existing note or set new note
                     if let Some(ref existing_note) = entry.note {
-                        entry.note = Some(format!("{}\n{}", existing_note, new_note));
+                        entry.note = Some(format!("{existing_note}\n{new_note}"));
                     } else {
                         entry.note = Some(new_note.clone());
                     }
                     println!("Note added to: {}", entry.description);
                     if let Some(ref note) = entry.note {
                         for line in note.lines() {
-                            println!("  {}", line);
+                            println!("  {line}");
                         }
                     }
                 }
@@ -222,14 +230,13 @@ fn filter_by_search(
         let regex = if case_sensitive {
             Regex::new(pattern)?
         } else {
-            Regex::new(&format!("(?i){}", pattern))?
+            Regex::new(&format!("(?i){pattern}"))?
         };
         entries.into_iter()
             .filter(|entry| regex.is_match(&entry.description))
             .collect()
-    } else if search_query.starts_with('\'') {
+    } else if let Some(query) = search_query.strip_prefix('\'') {
         // Exact match
-        let query = &search_query[1..];
         entries.into_iter()
             .filter(|entry| {
                 if case_sensitive {
@@ -279,7 +286,7 @@ fn filter_by_tag(
                 if tag.contains('*') || tag.contains('?') {
                     // Wildcard matching
                     let pattern = tag.replace('*', ".*").replace('?', ".");
-                    if let Ok(regex) = Regex::new(&format!("^{}$", pattern)) {
+                    if let Ok(regex) = Regex::new(&format!("^{pattern}$")) {
                         for entry_tag in entry.tags.keys() {
                             if regex.is_match(entry_tag) {
                                 return true;

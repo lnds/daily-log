@@ -97,7 +97,8 @@ pub fn handle_finish(
     
     // Process each entry
     let mut finished_count = 0;
-    let mut updates: Vec<(String, DateTime<Local>, String, Option<DateTime<Local>>)> = Vec::new();
+    type EntryUpdate = (String, DateTime<Local>, String, Option<DateTime<Local>>);
+    let mut updates: Vec<EntryUpdate> = Vec::new();
     
     // First pass: collect updates without mutating
     for (section, timestamp, description) in entries_to_finish {
@@ -219,9 +220,8 @@ fn filter_by_search(
         entries.into_iter()
             .filter(|(_, _, desc)| regex.is_match(desc))
             .collect()
-    } else if search_query.starts_with('\'') {
+    } else if let Some(query) = search_query.strip_prefix('\'') {
         // Exact match
-        let query = &search_query[1..];
         entries.into_iter()
             .filter(|(_, _, desc)| desc == query)
             .collect()
@@ -259,7 +259,7 @@ fn filter_by_tag(
                             if tag.contains('*') || tag.contains('?') {
                                 // Wildcard matching
                                 let pattern = tag.replace('*', ".*").replace('?', ".");
-                                if let Ok(regex) = Regex::new(&format!("^{}$", pattern)) {
+                                if let Ok(regex) = Regex::new(&format!("^{pattern}$")) {
                                     for entry_tag in entry.tags.keys() {
                                         if regex.is_match(entry_tag) {
                                             return true;

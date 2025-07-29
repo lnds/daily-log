@@ -20,7 +20,7 @@ impl DoingFile {
     pub fn add_entry(&mut self, entry: Entry) {
         self.sections
             .entry(entry.section.clone())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(entry);
     }
 
@@ -28,7 +28,7 @@ impl DoingFile {
         entry.section = section.clone();
         self.sections
             .entry(section)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(entry);
     }
 
@@ -77,7 +77,7 @@ impl DoingFile {
         });
 
         for (section_name, entries) in sorted_sections {
-            result.push_str(&Section::from_str(section_name).to_taskpaper());
+            result.push_str(&Section::parse(section_name).to_taskpaper());
             result.push('\n');
 
             for entry in entries {

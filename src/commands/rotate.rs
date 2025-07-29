@@ -2,7 +2,7 @@ use crate::storage::{Config, parse_taskpaper, save_taskpaper, DoingFile};
 use chrono::Local;
 use color_eyre::Result;
 use regex::Regex;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::fs;
 use std::collections::HashMap;
 
@@ -23,7 +23,7 @@ pub fn handle_rotate(
     let mut doing_file = parse_taskpaper(&doing_file_path)?;
 
     // Calculate archive file path
-    let archive_path = get_archive_path(&doing_file_path);
+    let archive_path = get_archive_path(doing_file_path.as_path());
 
     // Load or create archive file
     let mut archive_file = if archive_path.exists() {
@@ -64,7 +64,7 @@ pub fn handle_rotate(
         if doing_file.sections.contains_key(section_name) {
             vec![section_name.clone()]
         } else {
-            eprintln!("Section '{}' not found", section_name);
+            eprintln!("Section '{section_name}' not found");
             return Ok(());
         }
     } else {
@@ -95,7 +95,7 @@ pub fn handle_rotate(
                 // Apply search filter
                 if let Some(ref regex) = search_regex {
                     if !regex.is_match(&entry.description) && 
-                       !entry.note.as_ref().map_or(false, |n| regex.is_match(n)) {
+                       !entry.note.as_ref().is_some_and(|n| regex.is_match(n)) {
                         matches = false;
                     }
                 }
@@ -191,12 +191,12 @@ pub fn handle_rotate(
     Ok(())
 }
 
-fn get_archive_path(doing_file_path: &PathBuf) -> PathBuf {
+fn get_archive_path(doing_file_path: &Path) -> PathBuf {
     let file_stem = doing_file_path.file_stem()
         .and_then(|s| s.to_str())
         .unwrap_or("doing");
     
-    let archive_name = format!("{}_archive.taskpaper", file_stem);
+    let archive_name = format!("{file_stem}_archive.taskpaper");
     
     if let Some(parent) = doing_file_path.parent() {
         parent.join(archive_name)
@@ -221,7 +221,7 @@ fn compile_search_regex(pattern: &str, case: &str, exact: bool) -> Result<Regex>
     let case_insensitive = parse_smart_case(case, &pattern);
     
     let regex = if case_insensitive {
-        Regex::new(&format!("(?i){}", pattern))?
+        Regex::new(&format!("(?i){pattern}"))?
     } else {
         Regex::new(&pattern)?
     };
@@ -231,15 +231,19 @@ fn compile_search_regex(pattern: &str, case: &str, exact: bool) -> Result<Regex>
 
 fn compile_tag_regex(pattern: &str) -> Result<Regex> {
     let pattern = pattern.trim_start_matches('@');
-    Ok(Regex::new(&format!("^{}$", pattern))?)
+    Ok(Regex::new(&format!("^{pattern}$"))?)
 }
 
 fn parse_smart_case(case: &str, pattern: &str) -> bool {
     match case {
         "i" | "ignore" => true,
         "c" | "case-sensitive" => false,
-        "s" | "smart" | _ => {
+        "s" | "smart" => {
             // Smart case: case-insensitive unless pattern contains uppercase
+            !pattern.chars().any(|c| c.is_uppercase())
+        }
+        _ => {
+            // Default to smart case
             !pattern.chars().any(|c| c.is_uppercase())
         }
     }

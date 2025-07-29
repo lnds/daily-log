@@ -87,7 +87,7 @@ pub fn handle_grep(
     let entries = filter_entries(&doing_file, &filter_opts)?;
 
     if entries.is_empty() {
-        println!("No entries found matching '{}'", pattern);
+        println!("No entries found matching '{pattern}'");
         return Ok(());
     }
 

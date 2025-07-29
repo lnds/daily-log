@@ -66,7 +66,7 @@ pub fn handle_since(
     let entries = filter_entries(&doing_file, &filter_opts)?;
 
     if entries.is_empty() {
-        println!("No entries found since {}", date_string);
+        println!("No entries found since {date_string}");
         return Ok(());
     }
 

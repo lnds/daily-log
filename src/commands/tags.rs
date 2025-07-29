@@ -3,46 +3,55 @@ use color_eyre::Result;
 use regex::Regex;
 use std::collections::HashMap;
 
+#[derive(Debug)]
+pub struct TagsFilterOptions {
+    pub section: Vec<String>,
+    pub search: Option<String>,
+    pub tag: Option<String>,
+    pub val: Vec<String>,
+    pub case: String,
+    pub exact: bool,
+    pub not: bool,
+}
+
+#[derive(Debug)]
+pub struct TagsDisplayOptions {
+    pub max_count: Option<usize>,
+    pub counts: bool,
+    pub line: bool,
+    pub order: String,
+    pub sort: String,
+}
+
 pub fn handle_tags(
-    max_count: Option<usize>,
-    _bool_op: String,
-    counts: bool,
-    case: String,
+    filter_opts: TagsFilterOptions,
+    display_opts: TagsDisplayOptions,
     interactive: bool,
-    line: bool,
-    not: bool,
-    order: String,
-    section: Vec<String>,
-    search: Option<String>,
-    sort: String,
-    tag: Option<String>,
-    val: Vec<String>,
-    exact: bool,
 ) -> Result<()> {
     let config = Config::load();
     let doing_file_path = config.doing_file_path();
     let doing_file = parse_taskpaper(&doing_file_path)?;
 
     // Compile search patterns
-    let search_regex = if let Some(ref pattern) = search {
-        Some(compile_search_regex(pattern, &case, exact)?)
+    let search_regex = if let Some(ref pattern) = filter_opts.search {
+        Some(compile_search_regex(pattern, &filter_opts.case, filter_opts.exact)?)
     } else {
         None
     };
 
-    let tag_regex = if let Some(ref tag_pattern) = tag {
+    let tag_regex = if let Some(ref tag_pattern) = filter_opts.tag {
         Some(compile_tag_regex(tag_pattern)?)
     } else {
         None
     };
 
-    let tag_value_queries = compile_tag_value_queries(&val)?;
+    let tag_value_queries = compile_tag_value_queries(&filter_opts.val)?;
 
     // Determine which sections to process
-    let sections_to_process: Vec<&String> = if section.is_empty() {
+    let sections_to_process: Vec<&String> = if filter_opts.section.is_empty() {
         doing_file.sections.keys().collect()
     } else {
-        section.iter()
+        filter_opts.section.iter()
             .filter(|s| doing_file.sections.contains_key(*s))
             .collect()
     };
@@ -58,7 +67,7 @@ pub fn handle_tags(
                 // Apply search filter
                 if let Some(ref regex) = search_regex {
                     if !regex.is_match(&entry.description) && 
-                       !entry.note.as_ref().map_or(false, |n| regex.is_match(n)) {
+                       !entry.note.as_ref().is_some_and(|n| regex.is_match(n)) {
                         matches = false;
                     }
                 }
@@ -84,13 +93,13 @@ pub fn handle_tags(
                 }
 
                 // Apply not filter
-                if not {
+                if filter_opts.not {
                     matches = !matches;
                 }
 
                 if matches {
                     // Count all tags in this entry
-                    for (tag_name, _) in &entry.tags {
+                    for tag_name in entry.tags.keys() {
                         *tag_counts.entry(tag_name.clone()).or_insert(0) += 1;
                     }
                 }
@@ -106,7 +115,7 @@ pub fn handle_tags(
     // Sort tags
     let mut sorted_tags: Vec<(String, usize)> = tag_counts.into_iter().collect();
     
-    match sort.as_str() {
+    match display_opts.sort.as_str() {
         "name" => {
             sorted_tags.sort_by(|a, b| a.0.cmp(&b.0));
         }
@@ -119,12 +128,12 @@ pub fn handle_tags(
     }
 
     // Apply order (asc/desc)
-    if order == "desc" {
+    if display_opts.order == "desc" {
         sorted_tags.reverse();
     }
 
     // Apply max count
-    if let Some(max) = max_count {
+    if let Some(max) = display_opts.max_count {
         sorted_tags.truncate(max);
     }
 
@@ -135,15 +144,15 @@ pub fn handle_tags(
         return Ok(());
     }
 
-    if line {
+    if display_opts.line {
         // Display all tags on one line
-        let tag_list: Vec<String> = if counts {
+        let tag_list: Vec<String> = if display_opts.counts {
             sorted_tags.iter()
-                .map(|(tag, count)| format!("@{}({})", tag, count))
+                .map(|(tag, count)| format!("@{tag}({count})"))
                 .collect()
         } else {
             sorted_tags.iter()
-                .map(|(tag, _)| format!("@{}", tag))
+                .map(|(tag, _)| format!("@{tag}"))
                 .collect()
         };
         println!("{}", tag_list.join(" "));
@@ -155,10 +164,10 @@ pub fn handle_tags(
             .unwrap_or(0);
 
         for (tag, count) in sorted_tags {
-            if counts {
-                println!("{:width$} ({})", tag, count, width = max_tag_len);
+            if display_opts.counts {
+                println!("{tag:max_tag_len$} ({count})");
             } else {
-                println!("{}", tag);
+                println!("{tag}");
             }
         }
     }
@@ -176,7 +185,7 @@ fn compile_search_regex(pattern: &str, case: &str, exact: bool) -> Result<Regex>
     let case_insensitive = parse_smart_case(case, &pattern);
     
     let regex = if case_insensitive {
-        Regex::new(&format!("(?i){}", pattern))?
+        Regex::new(&format!("(?i){pattern}"))?
     } else {
         Regex::new(&pattern)?
     };
@@ -186,15 +195,19 @@ fn compile_search_regex(pattern: &str, case: &str, exact: bool) -> Result<Regex>
 
 fn compile_tag_regex(pattern: &str) -> Result<Regex> {
     let pattern = pattern.trim_start_matches('@');
-    Ok(Regex::new(&format!("^{}$", pattern))?)
+    Ok(Regex::new(&format!("^{pattern}$"))?)
 }
 
 fn parse_smart_case(case: &str, pattern: &str) -> bool {
     match case {
         "i" | "ignore" => true,
         "c" | "case-sensitive" => false,
-        "s" | "smart" | _ => {
+        "s" | "smart" => {
             // Smart case: case-insensitive unless pattern contains uppercase
+            !pattern.chars().any(|c| c.is_uppercase())
+        }
+        _ => {
+            // Default to smart case
             !pattern.chars().any(|c| c.is_uppercase())
         }
     }

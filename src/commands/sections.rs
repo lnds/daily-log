@@ -10,19 +10,19 @@ pub fn handle_sections(action: Option<SectionsAction>) -> Result<()> {
 
     match action {
         None | Some(SectionsAction::List { .. }) => {
-            list_sections(&doing_file, action.as_ref().map_or(false, |a| {
+            list_sections(&doing_file, action.as_ref().is_some_and(|a| {
                 matches!(a, SectionsAction::List { column: true, .. })
             }));
         }
         Some(SectionsAction::Add { section_name }) => {
             add_section(&mut doing_file, &section_name)?;
             save_taskpaper(&doing_file)?;
-            println!("Added section: {}", section_name);
+            println!("Added section: {section_name}");
         }
         Some(SectionsAction::Remove { section_name, archive }) => {
             remove_section(&mut doing_file, &section_name, archive)?;
             save_taskpaper(&doing_file)?;
-            println!("Removed section: {}", section_name);
+            println!("Removed section: {section_name}");
         }
     }
 
@@ -38,8 +38,8 @@ fn list_sections(doing_file: &DoingFile, column: bool) {
 
     if column {
         // Display in column format
-        for (name, _) in &sections {
-            println!("{}", name);
+        for name in sections.keys() {
+            println!("{name}");
         }
     } else {
         // Display with entry counts
@@ -84,7 +84,7 @@ fn remove_section(doing_file: &mut DoingFile, section_name: &str, archive: bool)
             if !entries.is_empty() {
                 let archive_entries = doing_file.sections
                     .entry("Archive".to_string())
-                    .or_insert_with(Vec::new);
+                    .or_default();
                 
                 // Add entries to the beginning of Archive section
                 for entry in entries.into_iter().rev() {

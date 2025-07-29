@@ -1,7 +1,9 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Default)]
 pub enum Section {
+    #[default]
     Currently,
     Later,
     Archive,
@@ -9,7 +11,7 @@ pub enum Section {
 }
 
 impl Section {
-    pub fn from_str(s: &str) -> Self {
+    pub fn parse(s: &str) -> Self {
         let trimmed = s.to_lowercase();
         let trimmed = trimmed.trim_end_matches(':');
         match trimmed {
@@ -25,7 +27,7 @@ impl Section {
             Section::Currently => "Currently:".to_string(),
             Section::Later => "Later:".to_string(),
             Section::Archive => "Archive:".to_string(),
-            Section::Custom(name) => format!("{}:", name),
+            Section::Custom(name) => format!("{name}:"),
         }
     }
 
@@ -39,11 +41,6 @@ impl Section {
     }
 }
 
-impl Default for Section {
-    fn default() -> Self {
-        Section::Currently
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -51,11 +48,11 @@ mod tests {
 
     #[test]
     fn test_section_from_str() {
-        assert_eq!(Section::from_str("Currently:"), Section::Currently);
-        assert_eq!(Section::from_str("later"), Section::Later);
-        assert_eq!(Section::from_str("Archive:"), Section::Archive);
+        assert_eq!(Section::parse("Currently:"), Section::Currently);
+        assert_eq!(Section::parse("later"), Section::Later);
+        assert_eq!(Section::parse("Archive:"), Section::Archive);
         assert_eq!(
-            Section::from_str("Work:"),
+            Section::parse("Work:"),
             Section::Custom("Work".to_string())
         );
     }

@@ -55,9 +55,9 @@ impl Entry {
         
         // Add tags to the description
         for (tag, value) in &self.tags {
-            desc_with_tags.push_str(&format!(" @{}", tag));
+            desc_with_tags.push_str(&format!(" @{tag}"));
             if let Some(v) = value {
-                desc_with_tags.push_str(&format!("({})", v));
+                desc_with_tags.push_str(&format!("({v})"));
             }
         }
         
@@ -72,7 +72,7 @@ impl Entry {
         // Add note with proper indentation (2 spaces)
         if let Some(note) = &self.note {
             for line in note.lines() {
-                result.push_str(&format!("\n  {}", line));
+                result.push_str(&format!("\n  {line}"));
             }
         }
         

@@ -104,7 +104,7 @@ pub fn handle_now(
         }
         
         // Remove trailing empty lines
-        while lines.last().map_or(false, |l| l.is_empty()) {
+        while lines.last().is_some_and(|l| l.is_empty()) {
             lines.pop();
         }
         
@@ -170,9 +170,9 @@ pub fn handle_now(
         let tags_str: Vec<String> = new_entry.tags.iter()
             .map(|(k, v)| {
                 if let Some(val) = v {
-                    format!("@{}({})", k, val)
+                    format!("@{k}({val})")
                 } else {
-                    format!("@{}", k)
+                    format!("@{k}")
                 }
             })
             .collect();
@@ -182,7 +182,7 @@ pub fn handle_now(
     if let Some(note) = &new_entry.note {
         println!("  Note: {}", note.lines().next().unwrap_or(""));
         for line in note.lines().skip(1) {
-            println!("        {}", line);
+            println!("        {line}");
         }
     }
     

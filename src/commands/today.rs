@@ -48,7 +48,7 @@ pub fn handle_today(section: Option<String>) -> color_eyre::Result<()> {
 
         if let Some(note) = &entry.note {
             for line in note.lines() {
-                println!("      {}", line);
+                println!("      {line}");
             }
         }
     }
