@@ -30,6 +30,8 @@ pub fn parse_taskpaper(path: &Path) -> color_eyre::Result<DoingFile> {
                 doing_file.add_entry(entry);
             }
             current_section = captures[1].to_string();
+            // Ensure the section exists even if it's empty
+            doing_file.sections.entry(current_section.clone()).or_insert_with(Vec::new);
         } else if let Some(captures) = task_regex.captures(line) {
             if let Some(entry) = current_entry.take() {
                 doing_file.add_entry(entry);
@@ -94,6 +96,10 @@ pub fn save_taskpaper(doing_file: &DoingFile) -> color_eyre::Result<()> {
     let content = doing_file.to_taskpaper();
     fs::write(&doing_file.path, content)?;
     Ok(())
+}
+
+pub fn format_taskpaper(doing_file: &DoingFile) -> String {
+    doing_file.to_taskpaper()
 }
 
 #[cfg(test)]

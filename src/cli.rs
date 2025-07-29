@@ -12,6 +12,27 @@ pub struct Cli {
     pub task: Vec<String>,
 }
 
+#[derive(Debug, Clone, Subcommand)]
+pub enum SectionsAction {
+    /// List sections (default)
+    List {
+        #[arg(short = 'c', long = "column")]
+        column: bool,
+    },
+    /// Add a section
+    Add {
+        /// Section name to add
+        section_name: String,
+    },
+    /// Remove a section
+    Remove {
+        /// Section name to remove
+        section_name: String,
+        #[arg(short = 'a', long = "archive")]
+        archive: bool,
+    },
+}
+
 #[derive(Subcommand)]
 pub enum Commands {
     /// Add an entry
@@ -1457,5 +1478,102 @@ pub enum Commands {
         /// Show time totals at end
         #[arg(long = "totals")]
         totals: bool,
+    },
+
+    /// List, add, or remove sections in the Doing file
+    Sections {
+        #[command(subcommand)]
+        action: Option<SectionsAction>,
+    },
+
+    /// Move entries between sections
+    #[command(alias = "move")]
+    Archive {
+        /// Section name or @tag to archive
+        #[arg(value_name = "SECTION_OR_TAG")]
+        target: Option<String>,
+        #[arg(long, value_name = "DATE_STRING")]
+        after: Option<String>,
+        #[arg(long, value_name = "DATE_STRING")]
+        before: Option<String>,
+        #[arg(long = "bool", value_name = "BOOLEAN", default_value = "pattern")]
+        bool_op: String,
+        #[arg(long = "case", value_name = "TYPE", default_value = "smart")]
+        case: String,
+        #[arg(long, value_name = "DATE_OR_RANGE")]
+        from: Option<String>,
+        #[arg(short = 'k', long, value_name = "X")]
+        keep: Option<usize>,
+        #[arg(long = "label", default_value = "true")]
+        label: bool,
+        #[arg(long)]
+        not: bool,
+        #[arg(long, value_name = "QUERY")]
+        search: Option<String>,
+        #[arg(short = 't', long, value_name = "SECTION_NAME", default_value = "Archive")]
+        to: String,
+        #[arg(long, value_name = "TAG")]
+        tag: Option<String>,
+        #[arg(long, value_name = "QUERY")]
+        val: Vec<String>,
+        #[arg(short = 'x', long)]
+        exact: bool,
+    },
+
+    /// Move entries to archive file
+    Rotate {
+        #[arg(long, value_name = "DATE_STRING")]
+        before: Option<String>,
+        #[arg(long = "bool", value_name = "BOOLEAN", default_value = "pattern")]
+        bool_op: String,
+        #[arg(long = "case", value_name = "TYPE", default_value = "smart")]
+        case: String,
+        #[arg(short = 'k', long, value_name = "X")]
+        keep: Option<usize>,
+        #[arg(long)]
+        not: bool,
+        #[arg(short = 's', long, value_name = "SECTION_NAME")]
+        section: Option<String>,
+        #[arg(long, value_name = "QUERY")]
+        search: Option<String>,
+        #[arg(long, value_name = "TAG")]
+        tag: Option<String>,
+        #[arg(long, value_name = "QUERY")]
+        val: Vec<String>,
+        #[arg(short = 'x', long)]
+        exact: bool,
+    },
+
+    /// List all tags in the current Doing file
+    Tags {
+        /// Maximum number of tags to show
+        #[arg(value_name = "MAX_COUNT")]
+        max_count: Option<usize>,
+        #[arg(long = "bool", value_name = "BOOLEAN", default_value = "pattern")]
+        bool_op: String,
+        #[arg(short = 'c', long = "counts")]
+        counts: bool,
+        #[arg(long = "case", value_name = "TYPE", default_value = "smart")]
+        case: String,
+        #[arg(short = 'i', long)]
+        interactive: bool,
+        #[arg(short = 'l', long = "line")]
+        line: bool,
+        #[arg(long)]
+        not: bool,
+        #[arg(short = 'o', long, value_name = "ORDER", default_value = "asc")]
+        order: String,
+        #[arg(short = 's', long, value_name = "SECTION_NAME")]
+        section: Vec<String>,
+        #[arg(long, value_name = "QUERY")]
+        search: Option<String>,
+        #[arg(long, value_name = "SORT_ORDER", default_value = "name")]
+        sort: String,
+        #[arg(long, value_name = "TAG")]
+        tag: Option<String>,
+        #[arg(long, value_name = "QUERY")]
+        val: Vec<String>,
+        #[arg(short = 'x', long)]
+        exact: bool,
     },
 }

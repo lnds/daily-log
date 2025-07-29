@@ -16,6 +16,10 @@ pub mod grep;
 pub mod on;
 pub mod since;
 pub mod yesterday;
+pub mod sections;
+pub mod archive;
+pub mod rotate;
+pub mod tags;
 
 #[cfg(test)]
 mod tests;
@@ -38,3 +42,7 @@ pub use grep::handle_grep;
 pub use on::handle_on;
 pub use since::handle_since;
 pub use yesterday::handle_yesterday;
+pub use sections::handle_sections;
+pub use archive::handle_archive;
+pub use rotate::handle_rotate;
+pub use tags::handle_tags;

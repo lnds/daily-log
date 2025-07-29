@@ -787,6 +787,100 @@ fn main() -> color_eyre::Result<()> {
                 totals,
             )?;
         }
+        Some(Commands::Sections { action }) => {
+            commands::handle_sections(action)?;
+        }
+        Some(Commands::Archive {
+            target,
+            after,
+            before,
+            bool_op,
+            case,
+            from,
+            keep,
+            label,
+            not,
+            search,
+            to,
+            tag,
+            val,
+            exact,
+        }) => {
+            commands::handle_archive(
+                target,
+                after,
+                before,
+                bool_op,
+                case,
+                from,
+                keep,
+                label,
+                not,
+                search,
+                to,
+                tag,
+                val,
+                exact,
+            )?;
+        }
+        Some(Commands::Rotate {
+            before,
+            bool_op,
+            case,
+            keep,
+            not,
+            section,
+            search,
+            tag,
+            val,
+            exact,
+        }) => {
+            commands::handle_rotate(
+                before,
+                bool_op,
+                case,
+                keep,
+                not,
+                section,
+                search,
+                tag,
+                val,
+                exact,
+            )?;
+        }
+        Some(Commands::Tags {
+            max_count,
+            bool_op,
+            counts,
+            case,
+            interactive,
+            line,
+            not,
+            order,
+            section,
+            search,
+            sort,
+            tag,
+            val,
+            exact,
+        }) => {
+            commands::handle_tags(
+                max_count,
+                bool_op,
+                counts,
+                case,
+                interactive,
+                line,
+                not,
+                order,
+                section,
+                search,
+                sort,
+                tag,
+                val,
+                exact,
+            )?;
+        }
         None => {
             // If no command but task words provided, treat as "now" command
             if !cli.task.is_empty() {

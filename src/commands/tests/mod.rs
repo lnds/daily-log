@@ -10,3 +10,11 @@ mod today_tests;
 mod done_tests;
 #[cfg(test)]
 mod delete_tests;
+#[cfg(test)]
+mod sections_tests;
+#[cfg(test)]
+mod archive_tests;
+#[cfg(test)]
+mod rotate_tests;
+#[cfg(test)]
+mod tags_tests;

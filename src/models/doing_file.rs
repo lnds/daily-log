@@ -64,33 +64,29 @@ impl DoingFile {
 
     pub fn to_taskpaper(&self) -> String {
         let mut result = String::new();
+        
+        // Sort sections to ensure consistent output
+        let mut sorted_sections: Vec<(&String, &Vec<Entry>)> = self.sections.iter().collect();
+        sorted_sections.sort_by_key(|(name, _)| {
+            // Currently always comes first, then alphabetical
+            if *name == "Currently" {
+                ("", name.as_str())
+            } else {
+                ("z", name.as_str())
+            }
+        });
 
-        // First output "Currently" section if it exists
-        if let Some(entries) = self.sections.get("Currently") {
-            if !entries.is_empty() {
-                result.push_str(&Section::Currently.to_taskpaper());
-                result.push('\n');
+        for (section_name, entries) in sorted_sections {
+            result.push_str(&Section::from_str(section_name).to_taskpaper());
+            result.push('\n');
 
-                for entry in entries {
-                    result.push_str(&entry.to_taskpaper());
-                    result.push('\n');
-                }
-
+            for entry in entries {
+                result.push_str(&entry.to_taskpaper());
                 result.push('\n');
             }
-        }
 
-        // Then output all other sections
-        for (section_name, entries) in &self.sections {
-            if section_name != "Currently" && !entries.is_empty() {
-                result.push_str(&Section::from_str(section_name).to_taskpaper());
-                result.push('\n');
-
-                for entry in entries {
-                    result.push_str(&entry.to_taskpaper());
-                    result.push('\n');
-                }
-
+            // Add blank line between sections
+            if !result.ends_with("\n\n") {
                 result.push('\n');
             }
         }

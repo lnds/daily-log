@@ -283,11 +283,27 @@ cargo test test_name
      - Shows entries from previous 24-hour period
      - Time filtering within the day
 
-8. **Phase 8: Organization & Archives**
-   - `sections` - List, add, or remove sections
-   - `archive, move` - Move entries between sections
-   - `rotate` - Move entries to archive file
-   - `tags` - List all tags in the current file
+8. **Phase 8: Organization & Archives** ✅ COMPLETE
+   - ✅ `sections` - List, add, or remove sections
+     - List sections with entry counts
+     - Add new sections
+     - Remove sections with optional archiving
+   - ✅ `archive, move` - Move entries between sections
+     - Move by section name or @tag
+     - Date filtering (--after, --before, --from)
+     - Search and tag filtering
+     - --keep option to limit number moved
+     - --label to add from_section tag
+   - ✅ `rotate` - Move entries to archive file
+     - Moves @done entries to separate archive file
+     - Date filtering with --before
+     - Section filtering
+     - Creates archive file if it doesn't exist
+   - ✅ `tags` - List all tags in the current file
+     - Display with or without counts
+     - Line or column format
+     - Sort by name or count
+     - Filter by section/search
 
 9. **Phase 9: Configuration & Views**
    - `config` - Edit configuration file
@@ -466,3 +482,61 @@ daily-log select            # Interactive menu
 daily-log meanwhile         # Handle @meanwhile tasks
 daily-log import data.csv   # Import entries from file
 ```
+
+## Development Guidelines
+
+### Testing Requirements
+
+**IMPORTANT: All new commands MUST include comprehensive unit tests**
+
+When implementing a new command:
+1. Create a test module in `src/commands/tests/{command}_tests.rs`
+2. Add tests covering:
+   - Basic functionality (happy path)
+   - Edge cases (empty files, missing entries, etc.)
+   - Error conditions
+   - All command-line flags and options
+   - Integration with sections, tags, and search filters
+3. Ensure tests use the test infrastructure in `src/test_utils.rs` for proper isolation
+4. Run `cargo test` to verify all tests pass before marking a phase complete
+
+Example test structure:
+```rust
+#[cfg(test)]
+mod tests {
+    use crate::test_utils::test_utils::*;
+    
+    #[test]
+    fn test_command_basic() {
+        let ctx = TestContext::new().unwrap();
+        // Test implementation
+    }
+    
+    #[test]
+    fn test_command_with_flags() {
+        let ctx = TestContext::new().unwrap();
+        // Test implementation
+    }
+}
+```
+
+### Code Style Guidelines
+
+1. Follow Rust naming conventions (snake_case for functions/variables, CamelCase for types)
+2. Use descriptive variable and function names
+3. Keep functions focused and single-purpose
+4. Add error handling with descriptive error messages
+5. Use the `color_eyre::Result` type for error propagation
+6. Avoid adding comments unless specifically requested
+
+### Command Implementation Checklist
+
+When adding a new command:
+- [ ] Add CLI definition in `src/cli.rs`
+- [ ] Create command handler in `src/commands/{command}.rs`
+- [ ] Add to `src/commands/mod.rs` exports
+- [ ] Add routing in `src/main.rs`
+- [ ] Write comprehensive unit tests
+- [ ] Test manually with various inputs
+- [ ] Update CLAUDE.md documentation
+- [ ] Ensure `cargo build` and `cargo test` pass without warnings
