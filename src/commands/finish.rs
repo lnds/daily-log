@@ -4,26 +4,29 @@ use chrono::{Local, DateTime, Duration};
 use chrono_english::{parse_date_string, Dialect};
 use regex::Regex;
 
-pub fn handle_finish(
-    count: usize,
-    archive: bool,
-    at: Option<String>,
-    auto: bool,
-    back: Option<String>,
-    from: Option<String>,
-    interactive: bool,
-    not: bool,
-    remove: bool,
-    sections: Vec<String>,
-    search: Option<String>,
-    took: Option<String>,
-    tag: Option<String>,
-    unfinished: bool,
-    update: bool,
-    exact: bool,
-    date: bool,
-) -> color_eyre::Result<()> {
-    if interactive {
+#[derive(Debug)]
+pub struct FinishOptions {
+    pub count: usize,
+    pub archive: bool,
+    pub at: Option<String>,
+    pub auto: bool,
+    pub back: Option<String>,
+    pub from: Option<String>,
+    pub interactive: bool,
+    pub not: bool,
+    pub remove: bool,
+    pub sections: Vec<String>,
+    pub search: Option<String>,
+    pub took: Option<String>,
+    pub tag: Option<String>,
+    pub unfinished: bool,
+    pub update: bool,
+    pub exact: bool,
+    pub date: bool,
+}
+
+pub fn handle_finish(opts: FinishOptions) -> color_eyre::Result<()> {
+    if opts.interactive {
         return Err(color_eyre::eyre::eyre!("Interactive mode not yet implemented"));
     }
 
@@ -33,10 +36,10 @@ pub fn handle_finish(
     let mut doing_file = parse_taskpaper(&doing_file_path)?;
     
     // Determine which sections to work with
-    let target_sections: Vec<String> = if sections.is_empty() {
+    let target_sections: Vec<String> = if opts.sections.is_empty() {
         vec!["Currently".to_string()]
     } else {
-        sections
+        opts.sections
     };
     
     // Collect all entries from target sections
@@ -56,22 +59,22 @@ pub fn handle_finish(
     let mut filtered_entries = all_entries;
     
     // Apply search filter
-    if let Some(search_query) = &search {
-        filtered_entries = filter_by_search(filtered_entries, search_query, exact)?;
+    if let Some(search_query) = &opts.search {
+        filtered_entries = filter_by_search(filtered_entries, search_query, opts.exact)?;
     }
     
     // Apply tag filter
-    if let Some(tag_query) = &tag {
+    if let Some(tag_query) = &opts.tag {
         filtered_entries = filter_by_tag(&doing_file, filtered_entries, tag_query)?;
     }
     
     // Apply unfinished filter
-    if unfinished {
+    if opts.unfinished {
         filtered_entries = filter_unfinished(&doing_file, filtered_entries)?;
     }
     
     // Apply NOT filter if specified
-    if not {
+    if opts.not {
         // Get all entries again and remove the filtered ones
         let mut all_entries_again: Vec<(String, DateTime<Local>, String)> = Vec::new();
         for section in &target_sections {
@@ -89,7 +92,7 @@ pub fn handle_finish(
     }
     
     // Take only the requested count
-    let entries_to_finish: Vec<_> = filtered_entries.into_iter().take(count).collect();
+    let entries_to_finish: Vec<_> = filtered_entries.into_iter().take(opts.count).collect();
     
     if entries_to_finish.is_empty() {
         return Err(color_eyre::eyre::eyre!("No matching entries found to finish"));
@@ -106,24 +109,24 @@ pub fn handle_finish(
             for entry in entries {
                 if entry.timestamp == timestamp && entry.description == description {
                     // Skip if already done and not updating
-                    if entry.is_done() && !update && !remove {
+                    if entry.is_done() && !opts.update && !opts.remove {
                         continue;
                     }
                     
-                    if remove {
+                    if opts.remove {
                         updates.push((section.clone(), timestamp, description.clone(), None));
                     } else {
                         // Calculate done time
-                        let done_time = if auto {
+                        let done_time = if opts.auto {
                             calculate_auto_done_time(&doing_file, &entry.timestamp)?
-                        } else if let Some(from_str) = &from {
+                        } else if let Some(from_str) = &opts.from {
                             let (_, end_time) = parse_from_range(from_str)?;
                             end_time
                         } else {
-                            calculate_done_time(&at, &back, &took, &entry.timestamp)?
+                            calculate_done_time(&opts.at, &opts.back, &opts.took, &entry.timestamp)?
                         };
                         
-                        if date {
+                        if opts.date {
                             updates.push((section.clone(), timestamp, description.clone(), Some(done_time)));
                         } else {
                             // For cancel command - no timestamp
@@ -147,7 +150,7 @@ pub fn handle_finish(
                         println!("Removed @done tag from: {}", entry.description);
                     } else if let Some(dt) = done_time {
                         // Add or update done tag
-                        if date {
+                        if opts.date {
                             entry.tags.insert("done".to_string(), Some(dt.format("%Y-%m-%d %H:%M").to_string()));
                             
                             println!("{}: {} @done({})", 
@@ -174,7 +177,7 @@ pub fn handle_finish(
     }
     
     // Archive entries if requested
-    if archive && !remove {
+    if opts.archive && !opts.remove {
         let mut entries_to_archive = Vec::new();
         
         for section in &target_sections {

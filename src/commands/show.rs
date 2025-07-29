@@ -2,43 +2,63 @@ use crate::display::{DisplayOptions, OutputFormat, TagSort, SortOrder, display_e
 use crate::filtering::{FilterOptions, CaseSensitivity, BoolOp, filter_entries, parse_date_filter, parse_date_range};
 use crate::storage::{Config, parse_taskpaper};
 
+#[derive(Debug)]
+pub struct ShowFilterOptions {
+    pub args: Vec<String>,
+    pub age: String,
+    pub after: Option<String>,
+    pub before: Option<String>,
+    pub bool_op: String,
+    pub case: String,
+    pub from: Option<String>,
+    pub not: bool,
+    pub only_timed: bool,
+    pub sections: Vec<String>,
+    pub search: Option<String>,
+    pub tag: Option<String>,
+    pub val: Vec<String>,
+    pub exact: bool,
+}
+
+#[derive(Debug)]
+pub struct ShowDisplayOptions {
+    pub count: usize,
+    pub duration: bool,
+    pub hilite: bool,
+    pub output: Option<String>,
+    pub sort: String,
+    pub times: bool,
+    pub tag_order: String,
+    pub tag_sort: String,
+    pub totals: bool,
+}
+
+#[derive(Debug)]
+pub struct ShowUIOptions {
+    pub interactive: bool,
+    pub menu: bool,
+    pub _editor: bool,
+}
+
+#[derive(Debug)]
+pub struct ShowConfigOptions {
+    pub _config_template: Option<String>,
+    pub _save: Option<String>,
+    pub _template: Option<String>,
+    pub _title: Option<String>,
+}
+
 pub fn handle_show(
-    args: Vec<String>,
-    age: String,
-    after: Option<String>,
-    before: Option<String>,
-    bool_op: String,
-    count: usize,
-    case: String,
-    _config_template: Option<String>,
-    duration: bool,
-    _editor: bool,
-    from: Option<String>,
-    hilite: bool,
-    interactive: bool,
-    menu: bool,
-    not: bool,
-    output: Option<String>,
-    only_timed: bool,
-    sections: Vec<String>,
-    _save: Option<String>,
-    search: Option<String>,
-    sort: String,
-    times: bool,
-    tag: Option<String>,
-    tag_order: String,
-    tag_sort: String,
-    _template: Option<String>,
-    _title: Option<String>,
-    totals: bool,
-    val: Vec<String>,
-    exact: bool,
+    filter_opts: ShowFilterOptions,
+    display_opts: ShowDisplayOptions,
+    ui_opts: ShowUIOptions,
+    _config_opts: ShowConfigOptions,
 ) -> color_eyre::Result<()> {
-    if interactive {
+    if ui_opts.interactive {
         return Err(color_eyre::eyre::eyre!("Interactive mode not yet implemented"));
     }
 
-    if menu {
+    if ui_opts.menu {
         return Err(color_eyre::eyre::eyre!("Menu mode not yet implemented"));
     }
 
@@ -47,10 +67,10 @@ pub fn handle_show(
     let doing_file = parse_taskpaper(&doing_file_path)?;
 
     // Parse arguments for sections and tags
-    let mut filter_sections = sections;
+    let mut filter_sections = filter_opts.sections;
     let mut filter_tags = vec![];
 
-    for arg in &args {
+    for arg in &filter_opts.args {
         if arg.starts_with('@') {
             filter_tags.push(arg.clone());
         } else if arg == "pick" || arg == "choose" {
@@ -62,77 +82,77 @@ pub fn handle_show(
     }
 
     // Add tags from --tag option
-    if let Some(tag_str) = tag {
+    if let Some(tag_str) = filter_opts.tag {
         for t in tag_str.split(',') {
             filter_tags.push(t.trim().to_string());
         }
     }
 
     // Build filter options
-    let mut filter_opts = FilterOptions {
-        search,
+    let mut filter_options = FilterOptions {
+        search: filter_opts.search,
         tags: filter_tags,
         sections: filter_sections,
-        case: match case.as_str() {
+        case: match filter_opts.case.as_str() {
             "c" | "case-sensitive" => CaseSensitivity::CaseSensitive,
             "i" | "ignore" => CaseSensitivity::Ignore,
             _ => CaseSensitivity::Smart,
         },
-        exact,
-        not,
-        bool_op: match bool_op.as_str() {
+        exact: filter_opts.exact,
+        not: filter_opts.not,
+        bool_op: match filter_opts.bool_op.as_str() {
             "and" | "AND" => BoolOp::And,
             "or" | "OR" => BoolOp::Or,
             "not" | "NOT" => BoolOp::Not,
             _ => BoolOp::Pattern,
         },
-        only_timed,
-        val,
+        only_timed: filter_opts.only_timed,
+        val: filter_opts.val,
         ..Default::default()
     };
 
     // Parse date filters
-    if let Some(after_str) = after {
-        filter_opts.after = Some(parse_date_filter(&after_str)?);
+    if let Some(after_str) = filter_opts.after {
+        filter_options.after = Some(parse_date_filter(&after_str)?);
     }
 
-    if let Some(before_str) = before {
-        filter_opts.before = Some(parse_date_filter(&before_str)?);
+    if let Some(before_str) = filter_opts.before {
+        filter_options.before = Some(parse_date_filter(&before_str)?);
     }
 
-    if let Some(from_str) = from {
+    if let Some(from_str) = filter_opts.from {
         let (start, end) = parse_date_range(&from_str)?;
-        filter_opts.from = Some((start, end));
+        filter_options.from = Some((start, end));
     }
 
     // Filter entries
-    let mut entries = filter_entries(&doing_file, &filter_opts)?;
+    let mut entries = filter_entries(&doing_file, &filter_options)?;
 
     // Sort entries
-    match sort.as_str() {
+    match display_opts.sort.as_str() {
         "asc" => entries.sort_by(|a, b| a.1.timestamp.cmp(&b.1.timestamp)),
         "desc" => entries.sort_by(|a, b| b.1.timestamp.cmp(&a.1.timestamp)),
         _ => entries.sort_by(|a, b| b.1.timestamp.cmp(&a.1.timestamp)),
     }
 
     // Apply age filter (newest/oldest)
-    if age == "oldest" {
+    if filter_opts.age == "oldest" {
         entries.reverse();
     }
 
     // Apply count limit
-    if count > 0 {
-        entries.truncate(count);
+    if display_opts.count > 0 {
+        entries.truncate(display_opts.count);
     }
 
     // Build display options
-    let display_opts = DisplayOptions {
-        times,
-        duration,
-        totals,
-        hilite,
-        search_query: filter_opts.search.clone(),
-        output_format: match output.as_deref() {
+    let display_options = DisplayOptions {
+        times: display_opts.times,
+        duration: display_opts.duration,
+        totals: display_opts.totals,
+        hilite: display_opts.hilite,
+        search_query: filter_options.search.clone(),
+        output_format: match display_opts.output.as_deref() {
             Some("json") => OutputFormat::Json,
             Some("csv") => OutputFormat::Csv,
             Some("markdown") => OutputFormat::Markdown,
@@ -141,19 +161,19 @@ pub fn handle_show(
             Some("timeline") => OutputFormat::Timeline,
             _ => OutputFormat::Default,
         },
-        tag_sort: match tag_sort.as_str() {
+        tag_sort: match display_opts.tag_sort.as_str() {
             "time" => TagSort::Time,
             _ => TagSort::Name,
         },
-        tag_order: match tag_order.as_str() {
+        tag_order: match display_opts.tag_order.as_str() {
             "desc" => SortOrder::Desc,
             _ => SortOrder::Asc,
         },
-        section_filter: filter_opts.sections.clone(),
+        section_filter: filter_options.sections.clone(),
     };
 
     // Display entries
-    display_entries(&entries, &display_opts)?;
+    display_entries(&entries, &display_options)?;
 
     Ok(())
 }

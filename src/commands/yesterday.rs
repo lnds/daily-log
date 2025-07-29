@@ -3,23 +3,26 @@ use crate::filtering::{FilterOptions, filter_entries, parse_date_filter, parse_d
 use crate::storage::{Config, parse_taskpaper};
 use chrono::{Local, Duration};
 
-pub fn handle_yesterday(
-    after: Option<String>,
-    before: Option<String>,
-    _config_template: Option<String>,
-    duration: bool,
-    from: Option<String>,
-    output: Option<String>,
-    only_timed: bool,
-    sections: Vec<String>,
-    _save: Option<String>,
-    times: bool,
-    tag_order: String,
-    tag_sort: String,
-    _template: Option<String>,
-    _title: Option<String>,
-    totals: bool,
-) -> color_eyre::Result<()> {
+#[derive(Debug)]
+pub struct YesterdayOptions {
+    pub after: Option<String>,
+    pub before: Option<String>,
+    pub _config_template: Option<String>,
+    pub duration: bool,
+    pub from: Option<String>,
+    pub output: Option<String>,
+    pub only_timed: bool,
+    pub sections: Vec<String>,
+    pub _save: Option<String>,
+    pub times: bool,
+    pub tag_order: String,
+    pub tag_sort: String,
+    pub _template: Option<String>,
+    pub _title: Option<String>,
+    pub totals: bool,
+}
+
+pub fn handle_yesterday(opts: YesterdayOptions) -> color_eyre::Result<()> {
     let config = Config::load();
     let doing_file_path = config.doing_file_path();
     let doing_file = parse_taskpaper(&doing_file_path)?;
@@ -40,14 +43,14 @@ pub fn handle_yesterday(
 
     // Build filter options
     let mut filter_opts = FilterOptions {
-        sections,
+        sections: opts.sections.clone(),
         from: Some((yesterday_start, Some(yesterday_end))),
-        only_timed,
+        only_timed: opts.only_timed,
         ..Default::default()
     };
 
     // Apply time filters if specified
-    if let Some(after_str) = after {
+    if let Some(after_str) = &opts.after {
         let after_time = parse_date_filter(&after_str)?;
         // Apply time to yesterday's date
         let time = after_time.time();
@@ -59,7 +62,7 @@ pub fn handle_yesterday(
         );
     }
 
-    if let Some(before_str) = before {
+    if let Some(before_str) = &opts.before {
         let before_time = parse_date_filter(&before_str)?;
         // Apply time to yesterday's date
         let time = before_time.time();
@@ -71,7 +74,7 @@ pub fn handle_yesterday(
         );
     }
 
-    if let Some(from_str) = from {
+    if let Some(from_str) = &opts.from {
         // Parse time range and apply to yesterday
         let (from_time, to_time) = parse_date_range(&from_str)?;
         filter_opts.after = Some(
@@ -100,12 +103,12 @@ pub fn handle_yesterday(
 
     // Build display options
     let display_opts = DisplayOptions {
-        times,
-        duration,
-        totals,
+        times: opts.times,
+        duration: opts.duration,
+        totals: opts.totals,
         hilite: false,
         search_query: None,
-        output_format: match output.as_deref() {
+        output_format: match opts.output.as_deref() {
             Some("json") => OutputFormat::Json,
             Some("csv") => OutputFormat::Csv,
             Some("markdown") => OutputFormat::Markdown,
@@ -114,11 +117,11 @@ pub fn handle_yesterday(
             Some("timeline") => OutputFormat::Timeline,
             _ => OutputFormat::Default,
         },
-        tag_sort: match tag_sort.as_str() {
+        tag_sort: match opts.tag_sort.as_str() {
             "time" => TagSort::Time,
             _ => TagSort::Name,
         },
-        tag_order: match tag_order.as_str() {
+        tag_order: match opts.tag_order.as_str() {
             "desc" => SortOrder::Desc,
             _ => SortOrder::Asc,
         },

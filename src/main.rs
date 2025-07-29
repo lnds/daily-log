@@ -20,7 +20,7 @@ fn main() -> color_eyre::Result<()> {
             ask, 
             noauto 
         }) => {
-            commands::handle_now(
+            commands::handle_now(commands::NowOptions {
                 entry, 
                 note, 
                 back, 
@@ -29,8 +29,8 @@ fn main() -> color_eyre::Result<()> {
                 from, 
                 editor, 
                 ask, 
-                noauto
-            )?;
+                _noauto: noauto,
+            })?;
         }
         Some(Commands::Last) => {
             commands::handle_last()?;
@@ -63,7 +63,7 @@ fn main() -> color_eyre::Result<()> {
             date,
             noauto,
         }) => {
-            commands::handle_done(
+            commands::handle_done(commands::DoneOptions {
                 entry,
                 note,
                 ask,
@@ -76,9 +76,9 @@ fn main() -> color_eyre::Result<()> {
                 archive,
                 remove,
                 unfinished,
-                date,
-                noauto,
-            )?;
+                _date: date,
+                _noauto: noauto,
+            })?;
         }
         Some(Commands::Finish {
             count,
@@ -99,7 +99,7 @@ fn main() -> color_eyre::Result<()> {
             exact,
             date,
         }) => {
-            commands::handle_finish(
+            commands::handle_finish(commands::FinishOptions {
                 count,
                 archive,
                 at,
@@ -117,7 +117,7 @@ fn main() -> color_eyre::Result<()> {
                 update,
                 exact,
                 date,
-            )?;
+            })?;
         }
         Some(Commands::Did {
             entry,
@@ -136,7 +136,7 @@ fn main() -> color_eyre::Result<()> {
             noauto,
         }) => {
             // Did is an alias for done
-            commands::handle_done(
+            commands::handle_done(commands::DoneOptions {
                 entry,
                 note,
                 ask,
@@ -149,9 +149,9 @@ fn main() -> color_eyre::Result<()> {
                 archive,
                 remove,
                 unfinished,
-                date,
-                noauto,
-            )?;
+                _date: date,
+                _noauto: noauto,
+            })?;
         }
         Some(Commands::Cancel {
             count,
@@ -164,7 +164,7 @@ fn main() -> color_eyre::Result<()> {
             unfinished,
             exact,
         }) => {
-            commands::handle_cancel(
+            commands::handle_cancel(commands::CancelOptions {
                 count,
                 archive,
                 interactive,
@@ -174,7 +174,7 @@ fn main() -> color_eyre::Result<()> {
                 tag,
                 unfinished,
                 exact,
-            )?;
+            })?;
         }
         Some(Commands::Delete {
             count,
@@ -253,10 +253,10 @@ fn main() -> color_eyre::Result<()> {
             val,
             exact,
         }) => {
-            commands::handle_tag(
+            commands::handle_tag(commands::TagOptions {
                 tags,
-                autotag,
-                bool_op,
+                _autotag: autotag,
+                _bool_op: bool_op,
                 count,
                 case,
                 date,
@@ -271,9 +271,9 @@ fn main() -> color_eyre::Result<()> {
                 tag,
                 unfinished,
                 value,
-                val,
+                _val: val,
                 exact,
-            )?;
+            })?;
         }
         Some(Commands::Note {
             note: _,
@@ -360,8 +360,8 @@ fn main() -> color_eyre::Result<()> {
             val,
             exact,
         }) => {
-            commands::handle_mark(
-                bool_op,
+            commands::handle_mark(commands::MarkOptions {
+                _bool_op: bool_op,
                 count,
                 case,
                 date,
@@ -373,9 +373,9 @@ fn main() -> color_eyre::Result<()> {
                 search,
                 tag,
                 unfinished,
-                val,
+                _val: val,
                 exact,
-            )?;
+            })?;
         }
         Some(Commands::Flag {
             bool_op,
@@ -394,8 +394,8 @@ fn main() -> color_eyre::Result<()> {
             exact,
         }) => {
             // Flag is an alias for mark
-            commands::handle_mark(
-                bool_op,
+            commands::handle_mark(commands::MarkOptions {
+                _bool_op: bool_op,
                 count,
                 case,
                 date,
@@ -407,9 +407,9 @@ fn main() -> color_eyre::Result<()> {
                 search,
                 tag,
                 unfinished,
-                val,
+                _val: val,
                 exact,
-            )?;
+            })?;
         }
         Some(Commands::Reset {
             date_string,
@@ -427,9 +427,9 @@ fn main() -> color_eyre::Result<()> {
             val,
             exact,
         }) => {
-            commands::handle_reset(
+            commands::handle_reset(commands::ResetOptions {
                 date_string,
-                bool_op,
+                _bool_op: bool_op,
                 case,
                 from,
                 interactive,
@@ -440,9 +440,9 @@ fn main() -> color_eyre::Result<()> {
                 search,
                 took,
                 tag,
-                val,
+                _val: val,
                 exact,
-            )?;
+            })?;
         }
         Some(Commands::Begin {
             date_string,
@@ -461,9 +461,9 @@ fn main() -> color_eyre::Result<()> {
             exact,
         }) => {
             // Begin is an alias for reset
-            commands::handle_reset(
+            commands::handle_reset(commands::ResetOptions {
                 date_string,
-                bool_op,
+                _bool_op: bool_op,
                 case,
                 from,
                 interactive,
@@ -474,9 +474,9 @@ fn main() -> color_eyre::Result<()> {
                 search,
                 took,
                 tag,
-                val,
+                _val: val,
                 exact,
-            )?;
+            })?;
         }
         Some(Commands::Show {
             args,
@@ -511,36 +511,44 @@ fn main() -> color_eyre::Result<()> {
             exact,
         }) => {
             commands::handle_show(
-                args,
-                age,
-                after,
-                before,
-                bool_op,
-                count,
-                case,
-                config_template,
-                duration,
-                editor,
-                from,
-                hilite,
-                interactive,
-                menu,
-                not,
-                output,
-                only_timed,
-                sections,
-                save,
-                search,
-                sort,
-                times,
-                tag,
-                tag_order,
-                tag_sort,
-                template,
-                title,
-                totals,
-                val,
-                exact,
+                commands::ShowFilterOptions {
+                    args,
+                    age,
+                    after,
+                    before,
+                    bool_op,
+                    case,
+                    from,
+                    not,
+                    only_timed,
+                    sections,
+                    search,
+                    tag,
+                    val,
+                    exact,
+                },
+                commands::ShowDisplayOptions {
+                    count,
+                    duration,
+                    hilite,
+                    output,
+                    sort,
+                    times,
+                    tag_order,
+                    tag_sort,
+                    totals,
+                },
+                commands::ShowUIOptions {
+                    interactive,
+                    menu,
+                    _editor: editor,
+                },
+                commands::ShowConfigOptions {
+                    _config_template: config_template,
+                    _save: save,
+                    _template: template,
+                    _title: title,
+                },
             )?;
         }
         Some(Commands::Grep {
@@ -572,32 +580,40 @@ fn main() -> color_eyre::Result<()> {
             exact,
         }) => {
             commands::handle_grep(
-                pattern,
-                after,
-                before,
-                bool_op,
-                case,
-                config_template,
-                delete,
-                duration,
-                editor,
-                from,
-                hilite,
-                interactive,
-                not,
-                output,
-                only_timed,
-                sections,
-                save,
-                times,
-                tag,
-                tag_order,
-                tag_sort,
-                template,
-                title,
-                totals,
-                val,
-                exact,
+                commands::GrepFilterOptions {
+                    pattern,
+                    after,
+                    before,
+                    bool_op,
+                    case,
+                    from,
+                    not,
+                    only_timed,
+                    sections,
+                    tag,
+                    val,
+                    exact,
+                },
+                commands::GrepDisplayOptions {
+                    duration,
+                    hilite,
+                    output,
+                    times,
+                    tag_order,
+                    tag_sort,
+                    totals,
+                },
+                commands::GrepActionOptions {
+                    delete,
+                    interactive,
+                    _editor: editor,
+                },
+                commands::GrepConfigOptions {
+                    _config_template: config_template,
+                    _save: save,
+                    _template: template,
+                    _title: title,
+                },
             )?;
         }
         Some(Commands::Search {
@@ -630,32 +646,40 @@ fn main() -> color_eyre::Result<()> {
         }) => {
             // Search is an alias for grep
             commands::handle_grep(
-                pattern,
-                after,
-                before,
-                bool_op,
-                case,
-                config_template,
-                delete,
-                duration,
-                editor,
-                from,
-                hilite,
-                interactive,
-                not,
-                output,
-                only_timed,
-                sections,
-                save,
-                times,
-                tag,
-                tag_order,
-                tag_sort,
-                template,
-                title,
-                totals,
-                val,
-                exact,
+                commands::GrepFilterOptions {
+                    pattern,
+                    after,
+                    before,
+                    bool_op,
+                    case,
+                    from,
+                    not,
+                    only_timed,
+                    sections,
+                    tag,
+                    val,
+                    exact,
+                },
+                commands::GrepDisplayOptions {
+                    duration,
+                    hilite,
+                    output,
+                    times,
+                    tag_order,
+                    tag_sort,
+                    totals,
+                },
+                commands::GrepActionOptions {
+                    delete,
+                    interactive,
+                    _editor: editor,
+                },
+                commands::GrepConfigOptions {
+                    _config_template: config_template,
+                    _save: save,
+                    _template: template,
+                    _title: title,
+                },
             )?;
         }
         Some(Commands::On {
@@ -684,29 +708,35 @@ fn main() -> color_eyre::Result<()> {
             exact,
         }) => {
             commands::handle_on(
-                date_string,
-                after,
-                before,
-                bool_op,
-                case,
-                config_template,
-                duration,
-                from,
-                not,
-                output,
-                only_timed,
-                sections,
-                save,
-                search,
-                times,
-                tag,
-                tag_order,
-                tag_sort,
-                template,
-                title,
-                totals,
-                val,
-                exact,
+                commands::OnFilterOptions {
+                    date_string,
+                    after,
+                    before,
+                    bool_op,
+                    case,
+                    from,
+                    not,
+                    only_timed,
+                    sections,
+                    search,
+                    tag,
+                    val,
+                    exact,
+                },
+                commands::OnDisplayOptions {
+                    duration,
+                    output,
+                    times,
+                    tag_order,
+                    tag_sort,
+                    totals,
+                },
+                commands::OnConfigOptions {
+                    _config_template: config_template,
+                    _save: save,
+                    _template: template,
+                    _title: title,
+                },
             )?;
         }
         Some(Commands::Since {
@@ -732,26 +762,32 @@ fn main() -> color_eyre::Result<()> {
             exact,
         }) => {
             commands::handle_since(
-                date_string,
-                bool_op,
-                case,
-                config_template,
-                duration,
-                not,
-                output,
-                only_timed,
-                sections,
-                save,
-                search,
-                times,
-                tag,
-                tag_order,
-                tag_sort,
-                template,
-                title,
-                totals,
-                val,
-                exact,
+                commands::SinceFilterOptions {
+                    date_string,
+                    bool_op,
+                    case,
+                    not,
+                    only_timed,
+                    sections,
+                    search,
+                    tag,
+                    val,
+                    exact,
+                },
+                commands::SinceDisplayOptions {
+                    duration,
+                    output,
+                    times,
+                    tag_order,
+                    tag_sort,
+                    totals,
+                },
+                commands::SinceConfigOptions {
+                    _config_template: config_template,
+                    _save: save,
+                    _template: template,
+                    _title: title,
+                },
             )?;
         }
         Some(Commands::Yesterday {
@@ -771,23 +807,23 @@ fn main() -> color_eyre::Result<()> {
             title,
             totals,
         }) => {
-            commands::handle_yesterday(
+            commands::handle_yesterday(commands::YesterdayOptions {
                 after,
                 before,
-                config_template,
+                _config_template: config_template,
                 duration,
                 from,
                 output,
                 only_timed,
                 sections,
-                save,
+                _save: save,
                 times,
                 tag_order,
                 tag_sort,
-                template,
-                title,
+                _template: template,
+                _title: title,
                 totals,
-            )?;
+            })?;
         }
         Some(Commands::Sections { action }) => {
             commands::handle_sections(action)?;
@@ -808,11 +844,11 @@ fn main() -> color_eyre::Result<()> {
             val,
             exact,
         }) => {
-            commands::handle_archive(
+            commands::handle_archive(commands::ArchiveOptions {
                 target,
                 after,
                 before,
-                bool_op,
+                _bool_op: bool_op,
                 case,
                 from,
                 keep,
@@ -823,7 +859,7 @@ fn main() -> color_eyre::Result<()> {
                 tag,
                 val,
                 exact,
-            )?;
+            })?;
         }
         Some(Commands::Rotate {
             before,
@@ -837,9 +873,9 @@ fn main() -> color_eyre::Result<()> {
             val,
             exact,
         }) => {
-            commands::handle_rotate(
+            commands::handle_rotate(commands::RotateOptions {
                 before,
-                bool_op,
+                _bool_op: bool_op,
                 case,
                 keep,
                 not,
@@ -848,7 +884,7 @@ fn main() -> color_eyre::Result<()> {
                 tag,
                 val,
                 exact,
-            )?;
+            })?;
         }
         Some(Commands::Tags {
             max_count,
@@ -889,17 +925,17 @@ fn main() -> color_eyre::Result<()> {
         None => {
             // If no command but task words provided, treat as "now" command
             if !cli.task.is_empty() {
-                commands::handle_now(
-                    cli.task, 
-                    None, 
-                    None, 
-                    None, 
-                    false, 
-                    None, 
-                    false, 
-                    false, 
-                    false
-                )?;
+                commands::handle_now(commands::NowOptions {
+                    entry: cli.task, 
+                    note: None, 
+                    back: None, 
+                    section: None, 
+                    finish_last: false, 
+                    from: None, 
+                    editor: false, 
+                    ask: false, 
+                    _noauto: false,
+                })?;
             } else {
                 // If no command and no task words, show recent entries
                 commands::handle_recent(10, None)?;

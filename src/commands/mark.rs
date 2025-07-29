@@ -4,28 +4,43 @@ use chrono::Local;
 use regex::Regex;
 use std::io::{self, Write};
 
-pub fn handle_mark(
-    _bool_op: String,
-    count: usize,
-    case: String,
-    date: bool,
-    force: bool,
-    interactive: bool,
-    not: bool,
-    remove: bool,
+#[derive(Debug)]
+pub struct MarkOptions {
+    pub _bool_op: String,
+    pub count: usize,
+    pub case: String,
+    pub date: bool,
+    pub force: bool,
+    pub interactive: bool,
+    pub not: bool,
+    pub remove: bool,
+    pub sections: Vec<String>,
+    pub search: Option<String>,
+    pub tag: Option<String>,
+    pub unfinished: bool,
+    pub _val: Vec<String>,
+    pub exact: bool,
+}
+
+#[derive(Debug)]
+struct EntryFilter {
     sections: Vec<String>,
     search: Option<String>,
     tag: Option<String>,
+    count: usize,
     unfinished: bool,
-    _val: Vec<String>,
     exact: bool,
-) -> color_eyre::Result<()> {
-    if interactive {
+    not: bool,
+    case: String,
+}
+
+pub fn handle_mark(opts: MarkOptions) -> color_eyre::Result<()> {
+    if opts.interactive {
         return Err(color_eyre::eyre::eyre!("Interactive mode not yet implemented"));
     }
 
     // Validate count and force
-    if count == 0 && !force {
+    if opts.count == 0 && !opts.force {
         print!("Are you sure you want to flag all entries? [y/N] ");
         io::stdout().flush()?;
         
@@ -44,17 +59,17 @@ pub fn handle_mark(
     let mut doing_file = parse_taskpaper(&doing_file_path)?;
     
     // Find entries to modify
-    let entries_to_modify = find_entries_to_modify(
-        &doing_file,
-        &sections,
-        search.as_deref(),
-        tag.as_deref(),
-        count,
-        unfinished,
-        exact,
-        not,
-        &case,
-    )?;
+    let filter = EntryFilter {
+        sections: opts.sections.clone(),
+        search: opts.search.clone(),
+        tag: opts.tag.clone(),
+        count: opts.count,
+        unfinished: opts.unfinished,
+        exact: opts.exact,
+        not: opts.not,
+        case: opts.case.clone(),
+    };
+    let entries_to_modify = find_entries_to_modify(&doing_file, filter)?;
 
     if entries_to_modify.is_empty() {
         return Err(color_eyre::eyre::eyre!("No matching entries found"));
@@ -66,12 +81,12 @@ pub fn handle_mark(
         if let Some(entries) = doing_file.sections.get_mut(&target_section) {
             for entry in entries.iter_mut() {
                 if entry.uuid == target_uuid {
-                    if remove {
+                    if opts.remove {
                         // Remove flagged tag
                         entry.tags.remove("flagged");
                     } else {
                         // Add flagged tag
-                        if date {
+                        if opts.date {
                             entry.tags.insert("flagged".to_string(), Some(Local::now().format("%Y-%m-%d %H:%M").to_string()));
                         } else {
                             entry.tags.insert("flagged".to_string(), None);
@@ -94,7 +109,7 @@ pub fn handle_mark(
     
     save_taskpaper(&doing_file)?;
     
-    let action = if remove { "Unflagged" } else { "Flagged" };
+    let action = if opts.remove { "Unflagged" } else { "Flagged" };
     println!("\n{} {} {}.", 
         action,
         modified_count, 
@@ -120,20 +135,13 @@ fn format_tags(tags: &std::collections::HashMap<String, Option<String>>) -> Stri
 
 fn find_entries_to_modify(
     doing_file: &crate::models::DoingFile,
-    sections: &[String],
-    search: Option<&str>,
-    tag: Option<&str>,
-    count: usize,
-    unfinished: bool,
-    exact: bool,
-    not: bool,
-    case: &str,
+    filter: EntryFilter,
 ) -> Result<Vec<(String, uuid::Uuid)>, color_eyre::eyre::Error> {
     // Determine which sections to search
-    let target_sections: Vec<String> = if sections.is_empty() {
+    let target_sections: Vec<String> = if filter.sections.is_empty() {
         doing_file.sections.keys().cloned().collect()
     } else {
-        sections.to_vec()
+        filter.sections.clone()
     };
     
     // Collect all entries from target sections
@@ -153,22 +161,22 @@ fn find_entries_to_modify(
     let mut filtered_entries = all_entries;
     
     // Apply search filter
-    if let Some(search_query) = search {
-        filtered_entries = filter_by_search(filtered_entries, search_query, exact, case)?;
+    if let Some(search_query) = &filter.search {
+        filtered_entries = filter_by_search(filtered_entries, search_query, filter.exact, &filter.case)?;
     }
     
     // Apply tag filter
-    if let Some(tag_query) = tag {
+    if let Some(tag_query) = &filter.tag {
         filtered_entries = filter_by_tag(filtered_entries, tag_query)?;
     }
     
     // Apply unfinished filter
-    if unfinished {
+    if filter.unfinished {
         filtered_entries.retain(|(_, entry)| !entry.is_done());
     }
     
     // Apply NOT filter if specified
-    if not {
+    if filter.not {
         // Get all entries again
         let mut all_entries_again: Vec<(String, Entry)> = Vec::new();
         for section in &target_sections {
@@ -190,10 +198,10 @@ fn find_entries_to_modify(
     }
     
     // Take only the requested count (0 means all)
-    let entries = if count == 0 {
+    let entries = if filter.count == 0 {
         filtered_entries
     } else {
-        filtered_entries.into_iter().take(count).collect()
+        filtered_entries.into_iter().take(filter.count).collect()
     };
     
     Ok(entries.into_iter()

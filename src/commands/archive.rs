@@ -4,42 +4,45 @@ use color_eyre::Result;
 use regex::Regex;
 use std::collections::HashMap;
 
-pub fn handle_archive(
-    target: Option<String>,
-    after: Option<String>,
-    before: Option<String>,
-    _bool_op: String,
-    case: String,
-    from: Option<String>,
-    keep: Option<usize>,
-    label: bool,
-    not: bool,
-    search: Option<String>,
-    to: String,
-    tag: Option<String>,
-    val: Vec<String>,
-    exact: bool,
-) -> Result<()> {
+#[derive(Debug)]
+pub struct ArchiveOptions {
+    pub target: Option<String>,
+    pub after: Option<String>,
+    pub before: Option<String>,
+    pub _bool_op: String,
+    pub case: String,
+    pub from: Option<String>,
+    pub keep: Option<usize>,
+    pub label: bool,
+    pub not: bool,
+    pub search: Option<String>,
+    pub to: String,
+    pub tag: Option<String>,
+    pub val: Vec<String>,
+    pub exact: bool,
+}
+
+pub fn handle_archive(opts: ArchiveOptions) -> Result<()> {
     let config = Config::load();
     let doing_file_path = config.doing_file_path();
     let mut doing_file = parse_taskpaper(&doing_file_path)?;
 
     // Ensure destination section exists
-    if !doing_file.sections.contains_key(&to) {
-        doing_file.sections.insert(to.clone(), Vec::new());
+    if !doing_file.sections.contains_key(&opts.to) {
+        doing_file.sections.insert(opts.to.clone(), Vec::new());
     }
 
     let mut entries_to_move = Vec::new();
     let mut source_sections = Vec::new();
 
     // Parse date filters
-    let after_date = after.as_ref().and_then(|s| chrono_english::parse_date_string(
+    let after_date = opts.after.as_ref().and_then(|s| chrono_english::parse_date_string(
         s, Local::now(), chrono_english::Dialect::Us
     ).ok());
-    let before_date = before.as_ref().and_then(|s| chrono_english::parse_date_string(
+    let before_date = opts.before.as_ref().and_then(|s| chrono_english::parse_date_string(
         s, Local::now(), chrono_english::Dialect::Us
     ).ok());
-    let date_range = from.as_ref().and_then(|s| {
+    let date_range = opts.from.as_ref().and_then(|s| {
         // Simple date range parsing - expects "YYYY-MM-DD to YYYY-MM-DD" format
         let parts: Vec<&str> = s.split(" to ").collect();
         if parts.len() == 2 {
@@ -59,7 +62,7 @@ pub fn handle_archive(
     });
 
     // Determine which sections to process
-    let sections_to_process: Vec<String> = if let Some(target_str) = &target {
+    let sections_to_process: Vec<String> = if let Some(target_str) = &opts.target {
         if target_str.starts_with('@') {
             // If target is a tag, process all sections
             doing_file.sections.keys().cloned().collect()
@@ -75,29 +78,29 @@ pub fn handle_archive(
     } else {
         // No target specified, process all sections except destination
         doing_file.sections.keys()
-            .filter(|k| *k != &to)
+            .filter(|k| *k != &opts.to)
             .cloned()
             .collect()
     };
 
     // Compile search patterns
-    let search_regex = if let Some(ref pattern) = search {
-        Some(compile_search_regex(pattern, &case, exact)?)
+    let search_regex = if let Some(ref pattern) = opts.search {
+        Some(compile_search_regex(pattern, &opts.case, opts.exact)?)
     } else {
         None
     };
 
-    let tag_regex = if let Some(ref tag_pattern) = tag {
+    let tag_regex = if let Some(ref tag_pattern) = opts.tag {
         Some(compile_tag_regex(tag_pattern)?)
     } else {
         None
     };
 
-    let tag_value_queries = compile_tag_value_queries(&val)?;
+    let tag_value_queries = compile_tag_value_queries(&opts.val)?;
 
     // Collect entries to move from each section
     for section_name in sections_to_process {
-        if section_name == to {
+        if section_name == opts.to {
             continue; // Don't move from destination to itself
         }
 
@@ -125,7 +128,7 @@ pub fn handle_archive(
                 }
 
                 // Apply target filter (tag)
-                if let Some(target_str) = &target {
+                if let Some(target_str) = &opts.target {
                     if target_str.starts_with('@') {
                         let tag_name = target_str.trim_start_matches('@');
                         if !entry.tags.contains_key(tag_name) {
@@ -163,7 +166,7 @@ pub fn handle_archive(
                 }
 
                 // Apply not filter
-                if not {
+                if opts.not {
                     matches = !matches;
                 }
 
@@ -173,7 +176,7 @@ pub fn handle_archive(
             }
 
             // Apply keep filter - keep only the most recent N entries
-            if let Some(keep_count) = keep {
+            if let Some(keep_count) = opts.keep {
                 if indices_to_move.len() > keep_count {
                     // Keep the last N entries (most recent)
                     indices_to_move = indices_to_move.into_iter()
@@ -199,12 +202,12 @@ pub fn handle_archive(
                 let mut entry = entries.remove(index);
                 
                 // Add label if requested
-                if label && section_name != "Currently" {
+                if opts.label && section_name != "Currently" {
                     entry.tags.insert(format!("from_{}", section_name.to_lowercase()), None);
                 }
                 
                 // Add to destination section
-                if let Some(dest_entries) = doing_file.sections.get_mut(&to) {
+                if let Some(dest_entries) = doing_file.sections.get_mut(&opts.to) {
                     dest_entries.insert(0, entry);
                     moved_count += 1;
                     if !source_sections.contains(&section_name) {
@@ -221,7 +224,7 @@ pub fn handle_archive(
             moved_count,
             if moved_count == 1 { "entry" } else { "entries" },
             source_sections.join(", "),
-            to
+            opts.to
         );
     } else {
         println!("No entries found matching the specified criteria");

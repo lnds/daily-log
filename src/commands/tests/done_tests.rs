@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::test_utils::test_utils::{TestContext, TestEntry};
-    use crate::commands::handle_done;
+    use crate::commands::{handle_done, DoneOptions};
     use crate::storage::parse_taskpaper;
     use chrono::{Local, Duration};
     
@@ -18,22 +18,22 @@ mod tests {
         ctx.create_doing_file_with_entries(entries)?;
         
         // Mark last entry as done
-        handle_done(
-            vec![],     // entry
-            None,       // note
-            false,      // ask
-            None,       // back
-            None,       // at
-            None,       // took
-            None,       // from
-            None,       // section
-            false,      // editor
-            false,      // archive
-            false,      // remove
-            false,      // unfinished
-            false,      // date
-            false,      // noauto
-        )?;
+        handle_done(DoneOptions {
+            entry: vec![],
+            note: None,
+            ask: false,
+            back: None,
+            at: None,
+            took: None,
+            from: None,
+            section: None,
+            editor: false,
+            archive: false,
+            remove: false,
+            unfinished: false,
+            _date: false,
+            _noauto: false,
+        })?;
         
         // Re-read the file after done command
         let doing_file = parse_taskpaper(&ctx.doing_file_path)?;
@@ -56,22 +56,22 @@ mod tests {
         ctx.create_test_file("Currently:\n")?;
         
         // Create a new done entry
-        handle_done(
-            vec!["Quick task @urgent".to_string()],
-            None,       // note
-            false,      // ask
-            None,       // back
-            None,       // at
-            None,       // took
-            None,       // from
-            None,       // section
-            false,      // editor
-            false,      // archive
-            false,      // remove
-            false,      // unfinished
-            false,      // date
-            false,      // noauto
-        )?;
+        handle_done(DoneOptions {
+            entry: vec!["Quick task @urgent".to_string()],
+            note: None,
+            ask: false,
+            back: None,
+            at: None,
+            took: None,
+            from: None,
+            section: None,
+            editor: false,
+            archive: false,
+            remove: false,
+            unfinished: false,
+            _date: false,
+            _noauto: false,
+        })?;
         
         let doing_file = parse_taskpaper(&ctx.doing_file_path)?;
         let entries = doing_file.sections.get("Currently").unwrap();
@@ -95,22 +95,22 @@ mod tests {
         ctx.create_doing_file_with_entries(entries)?;
         
         // Mark as done at specific time
-        handle_done(
-            vec![],
-            None,       // note
-            false,      // ask
-            None,       // back
-            Some("2 hours ago".to_string()),  // at
-            None,       // took
-            None,       // from
-            None,       // section
-            false,      // editor
-            false,      // archive
-            false,      // remove
-            false,      // unfinished
-            false,      // date
-            false,      // noauto
-        )?;
+        handle_done(DoneOptions {
+            entry: vec![],
+            note: None,
+            ask: false,
+            back: None,
+            at: Some("2 hours ago".to_string()),
+            took: None,
+            from: None,
+            section: None,
+            editor: false,
+            archive: false,
+            remove: false,
+            unfinished: false,
+            _date: false,
+            _noauto: false,
+        })?;
         
         let doing_file = parse_taskpaper(&ctx.doing_file_path)?;
         let entry = doing_file.sections.get("Currently").unwrap()
@@ -138,22 +138,22 @@ mod tests {
         ctx.create_doing_file_with_entries(entries)?;
         
         // Mark as done with duration
-        handle_done(
-            vec![],
-            None,       // note
-            false,      // ask
-            None,       // back
-            None,       // at
-            Some("2h30m".to_string()),  // took
-            None,       // from
-            None,       // section
-            false,      // editor
-            false,      // archive
-            false,      // remove
-            false,      // unfinished
-            false,      // date
-            false,      // noauto
-        )?;
+        handle_done(DoneOptions {
+            entry: vec![],
+            note: None,
+            ask: false,
+            back: None,
+            at: None,
+            took: Some("2h30m".to_string()),
+            from: None,
+            section: None,
+            editor: false,
+            archive: false,
+            remove: false,
+            unfinished: false,
+            _date: false,
+            _noauto: false,
+        })?;
         
         let doing_file = parse_taskpaper(&ctx.doing_file_path)?;
         let entry = doing_file.sections.get("Currently").unwrap()
@@ -177,22 +177,22 @@ mod tests {
         ctx.create_doing_file_with_entries(entries)?;
         
         // Remove done tag
-        handle_done(
-            vec![],
-            None,       // note
-            false,      // ask
-            None,       // back
-            None,       // at
-            None,       // took
-            None,       // from
-            None,       // section
-            false,      // editor
-            false,      // archive
-            true,       // remove
-            false,      // unfinished
-            false,      // date
-            false,      // noauto
-        )?;
+        handle_done(DoneOptions {
+            entry: vec![],
+            note: None,
+            ask: false,
+            back: None,
+            at: None,
+            took: None,
+            from: None,
+            section: None,
+            editor: false,
+            archive: false,
+            remove: true,
+            unfinished: false,
+            _date: false,
+            _noauto: false,
+        })?;
         
         // Re-read the file after removing done tag
         let doing_file = parse_taskpaper(&ctx.doing_file_path)?;
@@ -215,22 +215,22 @@ mod tests {
         ctx.create_doing_file_with_entries(entries)?;
         
         // Mark as done and archive
-        handle_done(
-            vec![],
-            None,       // note
-            false,      // ask
-            None,       // back
-            None,       // at
-            None,       // took
-            None,       // from
-            None,       // section
-            false,      // editor
-            true,       // archive
-            false,      // remove
-            false,      // unfinished
-            false,      // date
-            false,      // noauto
-        )?;
+        handle_done(DoneOptions {
+            entry: vec![],
+            note: None,
+            ask: false,
+            back: None,
+            at: None,
+            took: None,
+            from: None,
+            section: None,
+            editor: false,
+            archive: true,
+            remove: false,
+            unfinished: false,
+            _date: false,
+            _noauto: false,
+        })?;
         
         let doing_file = parse_taskpaper(&ctx.doing_file_path)?;
         

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::test_utils::test_utils::*;
-    use crate::commands::rotate::handle_rotate;
+    use crate::commands::{handle_rotate, RotateOptions};
     use chrono::Local;
     
     #[test]
@@ -12,10 +12,18 @@ mod tests {
         ).unwrap();
         
         // Rotate done entries
-        let result = handle_rotate(
-            None, "pattern".to_string(), "smart".to_string(),
-            None, false, None, None, None, vec![], false
-        );
+        let result = handle_rotate(RotateOptions {
+            before: None,
+            _bool_op: "pattern".to_string(),
+            case: "smart".to_string(),
+            keep: None,
+            not: false,
+            section: None,
+            search: None,
+            tag: None,
+            val: vec![],
+            exact: false,
+        });
         assert!(result.is_ok());
     }
     
@@ -38,11 +46,18 @@ mod tests {
         ]).unwrap();
         
         // Rotate entries before yesterday
-        let result = handle_rotate(
-            Some(yesterday.format("%Y-%m-%d").to_string()),
-            "pattern".to_string(), "smart".to_string(),
-            None, false, None, None, None, vec![], false
-        );
+        let result = handle_rotate(RotateOptions {
+            before: Some(yesterday.format("%Y-%m-%d").to_string()),
+            _bool_op: "pattern".to_string(),
+            case: "smart".to_string(),
+            keep: None,
+            not: false,
+            section: None,
+            search: None,
+            tag: None,
+            val: vec![],
+            exact: false,
+        });
         assert!(result.is_ok());
     }
     
@@ -54,10 +69,18 @@ mod tests {
         ).unwrap();
         
         // Rotate only from Work section
-        let result = handle_rotate(
-            None, "pattern".to_string(), "smart".to_string(),
-            None, false, Some("Work".to_string()), None, None, vec![], false
-        );
+        let result = handle_rotate(RotateOptions {
+            before: None,
+            _bool_op: "pattern".to_string(),
+            case: "smart".to_string(),
+            keep: None,
+            not: false,
+            section: Some("Work".to_string()),
+            search: None,
+            tag: None,
+            val: vec![],
+            exact: false,
+        });
         assert!(result.is_ok());
     }
     
@@ -69,10 +92,18 @@ mod tests {
         ).unwrap();
         
         // Rotate only @bug entries
-        let result = handle_rotate(
-            None, "pattern".to_string(), "smart".to_string(),
-            None, false, None, None, Some("bug".to_string()), vec![], false
-        );
+        let result = handle_rotate(RotateOptions {
+            before: None,
+            _bool_op: "pattern".to_string(),
+            case: "smart".to_string(),
+            keep: None,
+            not: false,
+            section: None,
+            search: None,
+            tag: Some("bug".to_string()),
+            val: vec![],
+            exact: false,
+        });
         assert!(result.is_ok());
     }
     
@@ -85,10 +116,18 @@ mod tests {
         ).unwrap();
         
         // Rotate new entry
-        let result = handle_rotate(
-            None, "pattern".to_string(), "smart".to_string(),
-            None, false, None, None, None, vec![], false
-        );
+        let result = handle_rotate(RotateOptions {
+            before: None,
+            _bool_op: "pattern".to_string(),
+            case: "smart".to_string(),
+            keep: None,
+            not: false,
+            section: None,
+            search: None,
+            tag: None,
+            val: vec![],
+            exact: false,
+        });
         assert!(result.is_ok());
     }
     
@@ -100,10 +139,18 @@ mod tests {
         ).unwrap();
         
         // Try to rotate - should find no entries
-        let result = handle_rotate(
-            None, "pattern".to_string(), "smart".to_string(),
-            None, false, None, None, None, vec![], false
-        );
+        let result = handle_rotate(RotateOptions {
+            before: None,
+            _bool_op: "pattern".to_string(),
+            case: "smart".to_string(),
+            keep: None,
+            not: false,
+            section: None,
+            search: None,
+            tag: None,
+            val: vec![],
+            exact: false,
+        });
         assert!(result.is_ok());
     }
     
@@ -115,10 +162,18 @@ mod tests {
         ).unwrap();
         
         // Rotate only oldest 2 entries
-        let result = handle_rotate(
-            None, "pattern".to_string(), "smart".to_string(),
-            Some(2), false, None, None, None, vec![], false
-        );
+        let result = handle_rotate(RotateOptions {
+            before: None,
+            _bool_op: "pattern".to_string(),
+            case: "smart".to_string(),
+            keep: Some(2),
+            not: false,
+            section: None,
+            search: None,
+            tag: None,
+            val: vec![],
+            exact: false,
+        });
         assert!(result.is_ok());
     }
 }

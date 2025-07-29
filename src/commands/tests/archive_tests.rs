@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::test_utils::test_utils::*;
-    use crate::commands::archive::handle_archive;
+    use crate::commands::{handle_archive, ArchiveOptions};
     use chrono::Local;
     
     #[test]
@@ -12,12 +12,22 @@ mod tests {
         ).unwrap();
         
         // Archive Work section
-        let result = handle_archive(
-            Some("Work".to_string()),
-            None, None, "pattern".to_string(), "smart".to_string(),
-            None, None, true, false, None, "Archive".to_string(),
-            None, vec![], false
-        );
+        let result = handle_archive(ArchiveOptions {
+            target: Some("Work".to_string()),
+            after: None,
+            before: None,
+            _bool_op: "pattern".to_string(),
+            case: "smart".to_string(),
+            from: None,
+            keep: None,
+            label: true,
+            not: false,
+            search: None,
+            to: "Archive".to_string(),
+            tag: None,
+            val: vec![],
+            exact: false,
+        });
         assert!(result.is_ok());
     }
     
@@ -29,12 +39,22 @@ mod tests {
         ).unwrap();
         
         // Archive entries with @urgent tag
-        let result = handle_archive(
-            Some("@urgent".to_string()),
-            None, None, "pattern".to_string(), "smart".to_string(),
-            None, None, false, false, None, "Archive".to_string(),
-            None, vec![], false
-        );
+        let result = handle_archive(ArchiveOptions {
+            target: Some("@urgent".to_string()),
+            after: None,
+            before: None,
+            _bool_op: "pattern".to_string(),
+            case: "smart".to_string(),
+            from: None,
+            keep: None,
+            label: false,
+            not: false,
+            search: None,
+            to: "Archive".to_string(),
+            tag: None,
+            val: vec![],
+            exact: false,
+        });
         assert!(result.is_ok());
     }
     
@@ -46,12 +66,22 @@ mod tests {
         ).unwrap();
         
         // Archive entries matching search
-        let result = handle_archive(
-            None,
-            None, None, "pattern".to_string(), "smart".to_string(),
-            None, None, false, false, Some("bug".to_string()), "Archive".to_string(),
-            None, vec![], false
-        );
+        let result = handle_archive(ArchiveOptions {
+            target: None,
+            after: None,
+            before: None,
+            _bool_op: "pattern".to_string(),
+            case: "smart".to_string(),
+            from: None,
+            keep: None,
+            label: false,
+            not: false,
+            search: Some("bug".to_string()),
+            to: "Archive".to_string(),
+            tag: None,
+            val: vec![],
+            exact: false,
+        });
         assert!(result.is_ok());
     }
     
@@ -71,13 +101,22 @@ mod tests {
         ]).unwrap();
         
         // Archive entries before today
-        let result = handle_archive(
-            None,
-            None, Some(now.format("%Y-%m-%d").to_string()), 
-            "pattern".to_string(), "smart".to_string(),
-            None, None, false, false, None, "Archive".to_string(),
-            None, vec![], false
-        );
+        let result = handle_archive(ArchiveOptions {
+            target: None,
+            after: None,
+            before: Some(now.format("%Y-%m-%d").to_string()),
+            _bool_op: "pattern".to_string(),
+            case: "smart".to_string(),
+            from: None,
+            keep: None,
+            label: false,
+            not: false,
+            search: None,
+            to: "Archive".to_string(),
+            tag: None,
+            val: vec![],
+            exact: false,
+        });
         assert!(result.is_ok());
     }
     
@@ -89,12 +128,22 @@ mod tests {
         ).unwrap();
         
         // Archive only 2 entries
-        let result = handle_archive(
-            Some("Currently".to_string()),
-            None, None, "pattern".to_string(), "smart".to_string(),
-            None, Some(2), false, false, None, "Archive".to_string(),
-            None, vec![], false
-        );
+        let result = handle_archive(ArchiveOptions {
+            target: Some("Currently".to_string()),
+            after: None,
+            before: None,
+            _bool_op: "pattern".to_string(),
+            case: "smart".to_string(),
+            from: None,
+            keep: Some(2),
+            label: false,
+            not: false,
+            search: None,
+            to: "Archive".to_string(),
+            tag: None,
+            val: vec![],
+            exact: false,
+        });
         assert!(result.is_ok());
     }
     
@@ -106,12 +155,22 @@ mod tests {
         ).unwrap();
         
         // Archive to non-existent section
-        let result = handle_archive(
-            Some("Currently".to_string()),
-            None, None, "pattern".to_string(), "smart".to_string(),
-            None, None, false, false, None, "Completed".to_string(),
-            None, vec![], false
-        );
+        let result = handle_archive(ArchiveOptions {
+            target: Some("Currently".to_string()),
+            after: None,
+            before: None,
+            _bool_op: "pattern".to_string(),
+            case: "smart".to_string(),
+            from: None,
+            keep: None,
+            label: false,
+            not: false,
+            search: None,
+            to: "Completed".to_string(),
+            tag: None,
+            val: vec![],
+            exact: false,
+        });
         assert!(result.is_ok());
     }
     
@@ -123,12 +182,22 @@ mod tests {
         ).unwrap();
         
         // Try to archive empty section
-        let result = handle_archive(
-            Some("Work".to_string()),
-            None, None, "pattern".to_string(), "smart".to_string(),
-            None, None, false, false, None, "Archive".to_string(),
-            None, vec![], false
-        );
+        let result = handle_archive(ArchiveOptions {
+            target: Some("Work".to_string()),
+            after: None,
+            before: None,
+            _bool_op: "pattern".to_string(),
+            case: "smart".to_string(),
+            from: None,
+            keep: None,
+            label: false,
+            not: false,
+            search: None,
+            to: "Archive".to_string(),
+            tag: None,
+            val: vec![],
+            exact: false,
+        });
         assert!(result.is_ok());
     }
 }

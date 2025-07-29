@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::test_utils::test_utils::{TestContext, TestEntry};
-    use crate::commands::handle_now;
+    use crate::commands::{handle_now, NowOptions};
     use crate::storage::parse_taskpaper;
     use chrono::{Local, Duration};
     use regex::Regex;
@@ -12,17 +12,17 @@ mod tests {
         ctx.create_test_file("Currently:\n")?;
         
         // Add a simple entry
-        handle_now(
-            vec!["Working on tests".to_string()],
-            None,
-            None,
-            None,
-            false,
-            None,
-            false,
-            false,
-            false,
-        )?;
+        handle_now(NowOptions {
+            entry: vec!["Working on tests".to_string()],
+            note: None,
+            back: None,
+            section: None,
+            finish_last: false,
+            from: None,
+            editor: false,
+            ask: false,
+            _noauto: false,
+        })?;
         
         let content = ctx.read_test_file()?;
         assert!(content.contains("Working on tests"));
@@ -41,17 +41,17 @@ mod tests {
         ctx.create_test_file("Currently:\n")?;
         
         // Add entry with tags
-        handle_now(
-            vec!["Fix bug @urgent @bug".to_string()],
-            None,
-            None,
-            None,
-            false,
-            None,
-            false,
-            false,
-            false,
-        )?;
+        handle_now(NowOptions {
+            entry: vec!["Fix bug @urgent @bug".to_string()],
+            note: None,
+            back: None,
+            section: None,
+            finish_last: false,
+            from: None,
+            editor: false,
+            ask: false,
+            _noauto: false,
+        })?;
         
         let content = ctx.read_test_file()?;
         assert!(content.contains("Fix bug"));
@@ -67,17 +67,17 @@ mod tests {
         ctx.create_test_file("Currently:\n")?;
         
         // Add entry with parenthetical note
-        handle_now(
-            vec!["Deploy app (remember to update configs)".to_string()],
-            None,
-            None,
-            None,
-            false,
-            None,
-            false,
-            false,
-            false,
-        )?;
+        handle_now(NowOptions {
+            entry: vec!["Deploy app (remember to update configs)".to_string()],
+            note: None,
+            back: None,
+            section: None,
+            finish_last: false,
+            from: None,
+            editor: false,
+            ask: false,
+            _noauto: false,
+        })?;
         
         let content = ctx.read_test_file()?;
         assert!(content.contains("Deploy app"));
@@ -92,17 +92,17 @@ mod tests {
         ctx.create_test_file("Currently:\n")?;
         
         // Add entry with --note flag
-        handle_now(
-            vec!["Important task".to_string()],
-            Some("This is a note".to_string()),
-            None,
-            None,
-            false,
-            None,
-            false,
-            false,
-            false,
-        )?;
+        handle_now(NowOptions {
+            entry: vec!["Important task".to_string()],
+            note: Some("This is a note".to_string()),
+            back: None,
+            section: None,
+            finish_last: false,
+            from: None,
+            editor: false,
+            ask: false,
+            _noauto: false,
+        })?;
         
         let content = ctx.read_test_file()?;
         assert!(content.contains("Important task"));
@@ -117,17 +117,17 @@ mod tests {
         ctx.create_test_file("Currently:\n")?;
         
         // Add backdated entry
-        handle_now(
-            vec!["Old task".to_string()],
-            None,
-            Some("2 hours ago".to_string()),
-            None,
-            false,
-            None,
-            false,
-            false,
-            false,
-        )?;
+        handle_now(NowOptions {
+            entry: vec!["Old task".to_string()],
+            note: None,
+            back: Some("2 hours ago".to_string()),
+            section: None,
+            finish_last: false,
+            from: None,
+            editor: false,
+            ask: false,
+            _noauto: false,
+        })?;
         
         let _content = ctx.read_test_file()?;
         let doing_file = parse_taskpaper(&ctx.doing_file_path)?;
@@ -158,17 +158,17 @@ mod tests {
         ctx.create_doing_file_with_entries(entries)?;
         
         // Add new entry with --finish_last
-        handle_now(
-            vec!["New task".to_string()],
-            None,
-            None,
-            None,
-            true,
-            None,
-            false,
-            false,
-            false,
-        )?;
+        handle_now(NowOptions {
+            entry: vec!["New task".to_string()],
+            note: None,
+            back: None,
+            section: None,
+            finish_last: true,
+            from: None,
+            editor: false,
+            ask: false,
+            _noauto: false,
+        })?;
         
         let doing_file = parse_taskpaper(&ctx.doing_file_path)?;
         let entries = doing_file.sections.get("Currently").unwrap();
@@ -190,17 +190,17 @@ mod tests {
         ctx.create_test_file("Currently:\n")?;
         
         // Add entry with time range
-        handle_now(
-            vec!["Meeting".to_string()],
-            None,
-            None,
-            None,
-            false,
-            Some("from 2pm to 3:30pm".to_string()),
-            false,
-            false,
-            false,
-        )?;
+        handle_now(NowOptions {
+            entry: vec!["Meeting".to_string()],
+            note: None,
+            back: None,
+            section: None,
+            finish_last: false,
+            from: Some("from 2pm to 3:30pm".to_string()),
+            editor: false,
+            ask: false,
+            _noauto: false,
+        })?;
         
         let doing_file = parse_taskpaper(&ctx.doing_file_path)?;
         let entry = doing_file.sections.get("Currently")
@@ -219,17 +219,17 @@ mod tests {
         ctx.create_test_file("Currently:\n\nProjects:\n")?;
         
         // Add entry to specific section
-        handle_now(
-            vec!["Project task".to_string()],
-            None,
-            None,
-            Some("Projects".to_string()),
-            false,
-            None,
-            false,
-            false,
-            false,
-        )?;
+        handle_now(NowOptions {
+            entry: vec!["Project task".to_string()],
+            note: None,
+            back: None,
+            section: Some("Projects".to_string()),
+            finish_last: false,
+            from: None,
+            editor: false,
+            ask: false,
+            _noauto: false,
+        })?;
         
         let doing_file = parse_taskpaper(&ctx.doing_file_path)?;
         
@@ -255,17 +255,17 @@ mod tests {
         ctx.create_test_file("Currently:\n")?;
         
         // Add entry to non-existent section
-        handle_now(
-            vec!["New section task".to_string()],
-            None,
-            None,
-            Some("NewSection".to_string()),
-            false,
-            None,
-            false,
-            false,
-            false,
-        )?;
+        handle_now(NowOptions {
+            entry: vec!["New section task".to_string()],
+            note: None,
+            back: None,
+            section: Some("NewSection".to_string()),
+            finish_last: false,
+            from: None,
+            editor: false,
+            ask: false,
+            _noauto: false,
+        })?;
         
         let doing_file = parse_taskpaper(&ctx.doing_file_path)?;
         

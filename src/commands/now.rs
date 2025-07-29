@@ -5,25 +5,28 @@ use chrono_english::{parse_date_string, Dialect};
 use regex::Regex;
 use std::io::{self, Write};
 
-pub fn handle_now(
-    entry: Vec<String>,
-    note: Option<String>,
-    back: Option<String>,
-    section: Option<String>,
-    finish_last: bool,
-    from: Option<String>,
-    editor: bool,
-    ask: bool,
-    _noauto: bool,
-) -> color_eyre::Result<()> {
+#[derive(Debug)]
+pub struct NowOptions {
+    pub entry: Vec<String>,
+    pub note: Option<String>,
+    pub back: Option<String>,
+    pub section: Option<String>,
+    pub finish_last: bool,
+    pub from: Option<String>,
+    pub editor: bool,
+    pub ask: bool,
+    pub _noauto: bool,
+}
+
+pub fn handle_now(opts: NowOptions) -> color_eyre::Result<()> {
     let config = Config::load();
     let doing_file_path = config.doing_file_path();
     
     let mut doing_file = parse_taskpaper(&doing_file_path)?;
     
     // Handle finish_last option - mark last entry as done
-    if finish_last {
-        let target_section = section.as_deref().unwrap_or("Currently");
+    if opts.finish_last {
+        let target_section = opts.section.as_deref().unwrap_or("Currently");
         
         // Find the last undone entry in the section
         let last_entry_info = doing_file.get_all_entries()
@@ -46,8 +49,8 @@ pub fn handle_now(
     }
     
     // Get entry text
-    let entry_text = if entry.is_empty() {
-        if editor {
+    let entry_text = if opts.entry.is_empty() {
+        if opts.editor {
             // TODO: Implement editor support
             return Err(color_eyre::eyre::eyre!("Editor support not yet implemented"));
         } else {
@@ -59,7 +62,7 @@ pub fn handle_now(
             input.trim().to_string()
         }
     } else {
-        entry.join(" ")
+        opts.entry.join(" ")
     };
     
     if entry_text.is_empty() {
@@ -75,11 +78,11 @@ pub fn handle_now(
     };
     
     // Get final note (command line flag takes precedence)
-    let final_note = if let Some(n) = note {
+    let final_note = if let Some(n) = opts.note {
         Some(n)
     } else if let Some(n) = parsed_note {
         Some(n)
-    } else if ask {
+    } else if opts.ask {
         // Multi-line note input
         println!("Add a note:");
         println!("Enter a blank line (return twice) to end editing and save, CTRL-C to cancel");
@@ -118,7 +121,7 @@ pub fn handle_now(
     };
     
     // Determine section
-    let target_section = section.unwrap_or_else(|| "Currently".to_string());
+    let target_section = opts.section.unwrap_or_else(|| "Currently".to_string());
     
     // Extract tags from entry text first
     let tag_regex = Regex::new(r"@(\w+)(?:\(([^)]+)\))?")?;
@@ -141,10 +144,10 @@ pub fn handle_now(
     }
     
     // Handle backdating
-    let entry_time = if let Some(back_str) = back {
+    let entry_time = if let Some(back_str) = opts.back {
         parse_date_string(&back_str, Local::now(), Dialect::Us)
             .map_err(|_| color_eyre::eyre::eyre!("Invalid date string: {}", back_str))?
-    } else if let Some(from_str) = from {
+    } else if let Some(from_str) = opts.from {
         // Parse "from X to Y" format
         parse_from_range(&from_str, &mut new_entry)?
     } else {

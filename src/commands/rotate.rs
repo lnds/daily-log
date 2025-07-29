@@ -6,18 +6,21 @@ use std::path::{Path, PathBuf};
 use std::fs;
 use std::collections::HashMap;
 
-pub fn handle_rotate(
-    before: Option<String>,
-    _bool_op: String,
-    case: String,
-    keep: Option<usize>,
-    not: bool,
-    section: Option<String>,
-    search: Option<String>,
-    tag: Option<String>,
-    val: Vec<String>,
-    exact: bool,
-) -> Result<()> {
+#[derive(Debug)]
+pub struct RotateOptions {
+    pub before: Option<String>,
+    pub _bool_op: String,
+    pub case: String,
+    pub keep: Option<usize>,
+    pub not: bool,
+    pub section: Option<String>,
+    pub search: Option<String>,
+    pub tag: Option<String>,
+    pub val: Vec<String>,
+    pub exact: bool,
+}
+
+pub fn handle_rotate(opts: RotateOptions) -> Result<()> {
     let config = Config::load();
     let doing_file_path = config.doing_file_path();
     let mut doing_file = parse_taskpaper(&doing_file_path)?;
@@ -40,27 +43,27 @@ pub fn handle_rotate(
     let mut entries_to_rotate = Vec::new();
 
     // Parse before date
-    let before_date = before.as_ref().and_then(|s| chrono_english::parse_date_string(
+    let before_date = opts.before.as_ref().and_then(|s| chrono_english::parse_date_string(
         s, Local::now(), chrono_english::Dialect::Us
     ).ok());
 
     // Compile search patterns
-    let search_regex = if let Some(ref pattern) = search {
-        Some(compile_search_regex(pattern, &case, exact)?)
+    let search_regex = if let Some(ref pattern) = opts.search {
+        Some(compile_search_regex(pattern, &opts.case, opts.exact)?)
     } else {
         None
     };
 
-    let tag_regex = if let Some(ref tag_pattern) = tag {
+    let tag_regex = if let Some(ref tag_pattern) = opts.tag {
         Some(compile_tag_regex(tag_pattern)?)
     } else {
         None
     };
 
-    let tag_value_queries = compile_tag_value_queries(&val)?;
+    let tag_value_queries = compile_tag_value_queries(&opts.val)?;
 
     // Determine which sections to process
-    let sections_to_process: Vec<String> = if let Some(ref section_name) = section {
+    let sections_to_process: Vec<String> = if let Some(ref section_name) = opts.section {
         if doing_file.sections.contains_key(section_name) {
             vec![section_name.clone()]
         } else {
@@ -121,7 +124,7 @@ pub fn handle_rotate(
                 }
 
                 // Apply not filter
-                if not {
+                if opts.not {
                     matches = !matches;
                 }
 
@@ -131,7 +134,7 @@ pub fn handle_rotate(
             }
 
             // Apply keep filter - keep only the oldest entries
-            if let Some(keep_count) = keep {
+            if let Some(keep_count) = opts.keep {
                 if indices_to_rotate.len() > keep_count {
                     // Keep the first N entries (oldest)
                     indices_to_rotate.truncate(keep_count);

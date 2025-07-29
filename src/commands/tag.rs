@@ -4,33 +4,48 @@ use chrono::Local;
 use regex::Regex;
 use std::io::{self, Write};
 
-pub fn handle_tag(
-    tags: Vec<String>,
-    _autotag: bool,
-    _bool_op: String,
-    count: usize,
-    case: String,
-    date: bool,
-    force: bool,
-    interactive: bool,
-    not: bool,
-    remove: bool,
-    regex: bool,
-    rename: Option<String>,
+#[derive(Debug)]
+pub struct TagOptions {
+    pub tags: Vec<String>,
+    pub _autotag: bool,
+    pub _bool_op: String,
+    pub count: usize,
+    pub case: String,
+    pub date: bool,
+    pub force: bool,
+    pub interactive: bool,
+    pub not: bool,
+    pub remove: bool,
+    pub regex: bool,
+    pub rename: Option<String>,
+    pub sections: Vec<String>,
+    pub search: Option<String>,
+    pub tag: Option<String>,
+    pub unfinished: bool,
+    pub value: Option<String>,
+    pub _val: Vec<String>,
+    pub exact: bool,
+}
+
+#[derive(Debug)]
+struct EntryFilter {
     sections: Vec<String>,
     search: Option<String>,
     tag: Option<String>,
+    count: usize,
     unfinished: bool,
-    value: Option<String>,
-    _val: Vec<String>,
     exact: bool,
-) -> color_eyre::Result<()> {
-    if interactive {
+    not: bool,
+    case: String,
+}
+
+pub fn handle_tag(opts: TagOptions) -> color_eyre::Result<()> {
+    if opts.interactive {
         return Err(color_eyre::eyre::eyre!("Interactive mode not yet implemented"));
     }
 
     // Validate count and force
-    if count == 0 && !force {
+    if opts.count == 0 && !opts.force {
         print!("Are you sure you want to tag all entries? [y/N] ");
         io::stdout().flush()?;
         
@@ -49,17 +64,17 @@ pub fn handle_tag(
     let mut doing_file = parse_taskpaper(&doing_file_path)?;
     
     // Find entries to modify
-    let entries_to_modify = find_entries_to_modify(
-        &doing_file,
-        &sections,
-        search.as_deref(),
-        tag.as_deref(),
-        count,
-        unfinished,
-        exact,
-        not,
-        &case,
-    )?;
+    let filter = EntryFilter {
+        sections: opts.sections.clone(),
+        search: opts.search.clone(),
+        tag: opts.tag.clone(),
+        count: opts.count,
+        unfinished: opts.unfinished,
+        exact: opts.exact,
+        not: opts.not,
+        case: opts.case.clone(),
+    };
+    let entries_to_modify = find_entries_to_modify(&doing_file, filter)?;
 
     if entries_to_modify.is_empty() {
         return Err(color_eyre::eyre::eyre!("No matching entries found"));
@@ -67,16 +82,16 @@ pub fn handle_tag(
 
     // Process tags
     let mut tags_to_process: Vec<(String, Option<String>)> = Vec::new();
-    for tag_str in &tags {
+    for tag_str in &opts.tags {
         let tag_name = if let Some(stripped) = tag_str.strip_prefix('@') {
             stripped.to_string()
         } else {
             tag_str.to_string()
         };
         
-        if let Some(val) = &value {
+        if let Some(val) = &opts.value {
             tags_to_process.push((tag_name, Some(val.clone())));
-        } else if date {
+        } else if opts.date {
             tags_to_process.push((tag_name, Some(Local::now().format("%Y-%m-%d %H:%M").to_string())));
         } else {
             tags_to_process.push((tag_name, None));
@@ -89,12 +104,12 @@ pub fn handle_tag(
         if let Some(entries) = doing_file.sections.get_mut(&target_section) {
             for entry in entries.iter_mut() {
                 if entry.uuid == target_uuid {
-                    if let Some(ref rename_from) = rename {
+                    if let Some(ref rename_from) = opts.rename {
                         // Rename existing tags
-                        rename_tags(entry, rename_from, &tags_to_process[0].0, regex, &case)?;
-                    } else if remove {
+                        rename_tags(entry, rename_from, &tags_to_process[0].0, opts.regex, &opts.case)?;
+                    } else if opts.remove {
                         // Remove tags
-                        remove_tags(entry, &tags, regex, &case)?;
+                        remove_tags(entry, &opts.tags, opts.regex, &opts.case)?;
                     } else {
                         // Add tags
                         for (tag_name, tag_value) in &tags_to_process {
@@ -228,20 +243,13 @@ fn create_regex(pattern: &str, case: &str) -> Result<Regex, color_eyre::eyre::Er
 
 fn find_entries_to_modify(
     doing_file: &crate::models::DoingFile,
-    sections: &[String],
-    search: Option<&str>,
-    tag: Option<&str>,
-    count: usize,
-    unfinished: bool,
-    exact: bool,
-    not: bool,
-    case: &str,
+    filter: EntryFilter,
 ) -> Result<Vec<(String, uuid::Uuid)>, color_eyre::eyre::Error> {
     // Determine which sections to search
-    let target_sections: Vec<String> = if sections.is_empty() {
+    let target_sections: Vec<String> = if filter.sections.is_empty() {
         doing_file.sections.keys().cloned().collect()
     } else {
-        sections.to_vec()
+        filter.sections.clone()
     };
     
     // Collect all entries from target sections
@@ -261,22 +269,22 @@ fn find_entries_to_modify(
     let mut filtered_entries = all_entries;
     
     // Apply search filter
-    if let Some(search_query) = search {
-        filtered_entries = filter_by_search(filtered_entries, search_query, exact, case)?;
+    if let Some(search_query) = &filter.search {
+        filtered_entries = filter_by_search(filtered_entries, search_query, filter.exact, &filter.case)?;
     }
     
     // Apply tag filter
-    if let Some(tag_query) = tag {
+    if let Some(tag_query) = &filter.tag {
         filtered_entries = filter_by_tag(filtered_entries, tag_query)?;
     }
     
     // Apply unfinished filter
-    if unfinished {
+    if filter.unfinished {
         filtered_entries.retain(|(_, entry)| !entry.is_done());
     }
     
     // Apply NOT filter if specified
-    if not {
+    if filter.not {
         // Get all entries again
         let mut all_entries_again: Vec<(String, Entry)> = Vec::new();
         for section in &target_sections {
@@ -298,10 +306,10 @@ fn find_entries_to_modify(
     }
     
     // Take only the requested count (0 means all)
-    let entries = if count == 0 {
+    let entries = if filter.count == 0 {
         filtered_entries
     } else {
-        filtered_entries.into_iter().take(count).collect()
+        filtered_entries.into_iter().take(filter.count).collect()
     };
     
     Ok(entries.into_iter()

@@ -5,30 +5,33 @@ use chrono_english::{parse_date_string, Dialect};
 use regex::Regex;
 use std::io::{self, Write};
 
-pub fn handle_done(
-    entry: Vec<String>,
-    note: Option<String>,
-    ask: bool,
-    back: Option<String>,
-    at: Option<String>,
-    took: Option<String>,
-    from: Option<String>,
-    section: Option<String>,
-    editor: bool,
-    archive: bool,
-    remove: bool,
-    unfinished: bool,
-    _date: bool,
-    _noauto: bool,
-) -> color_eyre::Result<()> {
+#[derive(Debug)]
+pub struct DoneOptions {
+    pub entry: Vec<String>,
+    pub note: Option<String>,
+    pub ask: bool,
+    pub back: Option<String>,
+    pub at: Option<String>,
+    pub took: Option<String>,
+    pub from: Option<String>,
+    pub section: Option<String>,
+    pub editor: bool,
+    pub archive: bool,
+    pub remove: bool,
+    pub unfinished: bool,
+    pub _date: bool,
+    pub _noauto: bool,
+}
+
+pub fn handle_done(opts: DoneOptions) -> color_eyre::Result<()> {
     let config = Config::load();
     let doing_file_path = config.doing_file_path();
     
     let mut doing_file = parse_taskpaper(&doing_file_path)?;
     
     // Handle remove flag - remove @done tag from last entry
-    if remove {
-        let target_section = section.as_deref().unwrap_or("Currently");
+    if opts.remove {
+        let target_section = opts.section.as_deref().unwrap_or("Currently");
         
         // Find the last done entry in the section
         let last_entry_info = doing_file.get_all_entries()
@@ -64,14 +67,14 @@ pub fn handle_done(
     }
     
     // If no entry text provided, mark last entry as done
-    if entry.is_empty() {
-        let target_section = section.as_deref().unwrap_or("Currently");
+    if opts.entry.is_empty() {
+        let target_section = opts.section.as_deref().unwrap_or("Currently");
         
         // Find the last entry (unfinished if --unfinished flag is set)
         let last_entry_info = doing_file.get_all_entries()
             .into_iter()
             .filter(|e| {
-                e.section == target_section && (!unfinished || !e.is_done())
+                e.section == target_section && (!opts.unfinished || !e.is_done())
             })
             .max_by_key(|e| e.timestamp)
             .map(|e| (e.timestamp, e.description.clone()));
@@ -84,12 +87,12 @@ pub fn handle_done(
             if let Some(entries) = doing_file.sections.get_mut(target_section) {
                 for entry in entries.iter_mut() {
                     if entry.timestamp == timestamp && entry.description == description {
-                        if entry.is_done() && !unfinished {
+                        if entry.is_done() && !opts.unfinished {
                             return Err(color_eyre::eyre::eyre!("Last entry is already marked @done"));
                         }
                         
                         // Calculate done time based on flags
-                        let done_time = calculate_done_time(&at, &took, &entry.timestamp)?;
+                        let done_time = calculate_done_time(&opts.at, &opts.took, &entry.timestamp)?;
                         entry.tags.insert("done".to_string(), Some(done_time.format("%Y-%m-%d %H:%M").to_string()));
                         
                         entry_info = Some((
@@ -105,7 +108,7 @@ pub fn handle_done(
             
             if found {
                 // If archive flag is set, move the entry to Archive section
-                if archive && let Some((time_str, desc, _done_time_str)) = &entry_info {
+                if opts.archive && let Some((time_str, desc, _done_time_str)) = &entry_info {
                     // Find and remove from current section
                     if let Some(entries) = doing_file.sections.get_mut(target_section) {
                         if let Some(pos) = entries.iter().position(|e| 
@@ -136,10 +139,10 @@ pub fn handle_done(
     }
     
     // Create a new entry and mark it as done
-    let entry_text = if editor {
+    let entry_text = if opts.editor {
         // TODO: Implement editor support
         return Err(color_eyre::eyre::eyre!("Editor support not yet implemented"));
-    } else if entry.is_empty() {
+    } else if opts.entry.is_empty() {
         // Interactive prompt
         print!("What did you finish? ");
         io::stdout().flush()?;
@@ -147,7 +150,7 @@ pub fn handle_done(
         io::stdin().read_line(&mut input)?;
         input.trim().to_string()
     } else {
-        entry.join(" ")
+        opts.entry.join(" ")
     };
     
     if entry_text.is_empty() {
@@ -163,11 +166,11 @@ pub fn handle_done(
     };
     
     // Get final note
-    let final_note = if let Some(n) = note {
+    let final_note = if let Some(n) = opts.note {
         Some(n)
     } else if let Some(n) = parsed_note {
         Some(n)
-    } else if ask {
+    } else if opts.ask {
         // Multi-line note input
         println!("Add a note:");
         println!("Enter a blank line (return twice) to end editing and save, CTRL-C to cancel");
@@ -206,10 +209,10 @@ pub fn handle_done(
     };
     
     // Determine section
-    let target_section = if archive {
+    let target_section = if opts.archive {
         "Archive".to_string()
     } else {
-        section.unwrap_or_else(|| "Currently".to_string())
+        opts.section.unwrap_or_else(|| "Currently".to_string())
     };
     
     // Extract tags from entry text
@@ -233,12 +236,12 @@ pub fn handle_done(
     }
     
     // Handle time calculations
-    let (start_time, done_time) = if let Some(from_str) = from {
+    let (start_time, done_time) = if let Some(from_str) = opts.from {
         // Parse "from X to Y" format
         parse_from_range(&from_str)?
     } else {
         // Calculate times based on other flags
-        let (start, done) = calculate_times(back, at, took)?;
+        let (start, done) = calculate_times(opts.back, opts.at, opts.took)?;
         (start, done)
     };
     

@@ -4,23 +4,26 @@ use chrono::{DateTime, Local};
 use chrono_english::{parse_date_string, Dialect};
 use regex::Regex;
 
-pub fn handle_reset(
-    date_string: Option<String>,
-    _bool_op: String,
-    case: String,
-    from: Option<String>,
-    interactive: bool,
-    no_resume: bool,
-    not: bool,
-    resume: bool,
-    sections: Vec<String>,
-    search: Option<String>,
-    took: Option<String>,
-    tag: Option<String>,
-    _val: Vec<String>,
-    exact: bool,
-) -> color_eyre::Result<()> {
-    if interactive {
+#[derive(Debug)]
+pub struct ResetOptions {
+    pub date_string: Option<String>,
+    pub _bool_op: String,
+    pub case: String,
+    pub from: Option<String>,
+    pub interactive: bool,
+    pub no_resume: bool,
+    pub not: bool,
+    pub resume: bool,
+    pub sections: Vec<String>,
+    pub search: Option<String>,
+    pub took: Option<String>,
+    pub tag: Option<String>,
+    pub _val: Vec<String>,
+    pub exact: bool,
+}
+
+pub fn handle_reset(opts: ResetOptions) -> color_eyre::Result<()> {
+    if opts.interactive {
         return Err(color_eyre::eyre::eyre!("Interactive mode not yet implemented"));
     }
 
@@ -32,12 +35,12 @@ pub fn handle_reset(
     // Find the entry to modify
     let entry_to_modify = find_entry_to_modify(
         &doing_file,
-        &sections,
-        search.as_deref(),
-        tag.as_deref(),
-        exact,
-        not,
-        &case,
+        &opts.sections,
+        opts.search.as_deref(),
+        opts.tag.as_deref(),
+        opts.exact,
+        opts.not,
+        &opts.case,
     )?;
 
     if entry_to_modify.is_none() {
@@ -47,12 +50,12 @@ pub fn handle_reset(
     let (target_section, target_uuid) = entry_to_modify.unwrap();
 
     // Parse the new start time
-    let new_start_time = if let Some(from_range) = from {
+    let new_start_time = if let Some(from_range) = &opts.from {
         // Parse from time range
-        parse_from_range(&from_range)?
-    } else if let Some(date_str) = date_string {
+        parse_from_range(from_range)?
+    } else if let Some(date_str) = &opts.date_string {
         // Parse provided date string
-        parse_date_string(&date_str, Local::now(), Dialect::Us)?
+        parse_date_string(date_str, Local::now(), Dialect::Us)?
     } else {
         // Use current time
         Local::now()
@@ -66,13 +69,13 @@ pub fn handle_reset(
                 entry.timestamp = new_start_time;
                 
                 // Handle resume (remove @done) unless explicitly disabled
-                let should_resume = resume && !no_resume && took.is_none();
+                let should_resume = opts.resume && !opts.no_resume && opts.took.is_none();
                 if should_resume {
                     entry.tags.remove("done");
                 }
                 
                 // Handle --took option
-                if let Some(took_str) = &took {
+                if let Some(took_str) = &opts.took {
                     let duration = parse_duration(took_str)?;
                     let done_time = new_start_time + duration;
                     entry.tags.insert("done".to_string(), Some(done_time.format("%Y-%m-%d %H:%M").to_string()));
