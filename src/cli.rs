@@ -310,6 +310,278 @@ pub enum Commands {
         exact: bool,
     },
 
+    /// Repeat last entry as new entry
+    #[command(
+        about = "Repeat last entry as new entry",
+        long_about = "This command is designed to allow multiple time intervals to be created for an entry by duplicating it with a new start (and end, eventually) time"
+    )]
+    Again {
+        /// Exclude auto tags and default tags
+        #[arg(short = 'X', long = "noauto")]
+        noauto: bool,
+
+        /// Prompt for note via multi-line input
+        #[arg(long = "ask")]
+        ask: bool,
+
+        /// Backdate start date for new entry to date string [4pm|20m|2h|yesterday noon]
+        #[arg(short = 'b', long = "back", alias = "started", alias = "since")]
+        back: Option<String>,
+
+        /// Boolean used to combine multiple tags (AND|OR|NOT)
+        #[arg(long = "bool", default_value = "pattern")]
+        bool_op: String,
+
+        /// Case sensitivity for search string matching [(c)ase-sensitive, (i)gnore, (s)mart]
+        #[arg(long = "case", default_value = "smart")]
+        case: String,
+
+        /// Edit entry with editor
+        #[arg(short = 'e', long = "editor")]
+        editor: bool,
+
+        /// Select item to resume from a menu of matching entries
+        #[arg(short = 'i', long = "interactive")]
+        interactive: bool,
+
+        /// Add new entry to section (default: same section as repeated entry)
+        #[arg(long = "in")]
+        in_section: Option<String>,
+
+        /// Include a note
+        #[arg(short = 'n', long = "note")]
+        note: Option<String>,
+
+        /// Repeat items that *don't* match search/tag filters
+        #[arg(long = "not")]
+        not: bool,
+
+        /// Get last entry from a specific section (may be used more than once)
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Filter entries using a search query
+        #[arg(long = "search")]
+        search: Option<String>,
+
+        /// Filter entries by tag
+        #[arg(long = "tag")]
+        tag: Option<String>,
+
+        /// Perform a tag value query
+        #[arg(long = "val")]
+        val: Vec<String>,
+
+        /// Force exact search string matching (case sensitive)
+        #[arg(short = 'x', long = "exact")]
+        exact: bool,
+    },
+
+    /// Alias for again command
+    Resume {
+        /// Exclude auto tags and default tags
+        #[arg(short = 'X', long = "noauto")]
+        noauto: bool,
+
+        /// Prompt for note via multi-line input
+        #[arg(long = "ask")]
+        ask: bool,
+
+        /// Backdate start date for new entry to date string [4pm|20m|2h|yesterday noon]
+        #[arg(short = 'b', long = "back", alias = "started", alias = "since")]
+        back: Option<String>,
+
+        /// Boolean used to combine multiple tags (AND|OR|NOT)
+        #[arg(long = "bool", default_value = "pattern")]
+        bool_op: String,
+
+        /// Case sensitivity for search string matching [(c)ase-sensitive, (i)gnore, (s)mart]
+        #[arg(long = "case", default_value = "smart")]
+        case: String,
+
+        /// Edit entry with editor
+        #[arg(short = 'e', long = "editor")]
+        editor: bool,
+
+        /// Select item to resume from a menu of matching entries
+        #[arg(short = 'i', long = "interactive")]
+        interactive: bool,
+
+        /// Add new entry to section (default: same section as repeated entry)
+        #[arg(long = "in")]
+        in_section: Option<String>,
+
+        /// Include a note
+        #[arg(short = 'n', long = "note")]
+        note: Option<String>,
+
+        /// Repeat items that *don't* match search/tag filters
+        #[arg(long = "not")]
+        not: bool,
+
+        /// Get last entry from a specific section (may be used more than once)
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Filter entries using a search query
+        #[arg(long = "search")]
+        search: Option<String>,
+
+        /// Filter entries by tag
+        #[arg(long = "tag")]
+        tag: Option<String>,
+
+        /// Perform a tag value query
+        #[arg(long = "val")]
+        val: Vec<String>,
+
+        /// Force exact search string matching (case sensitive)
+        #[arg(short = 'x', long = "exact")]
+        exact: bool,
+    },
+
+    /// Add tag(s) to last entry
+    #[command(
+        about = "Add tag(s) to last entry",
+        long_about = "Add (or remove) tags from the last entry, or from multiple entries (with `--count`), entries matching a search (with `--search`), or entries containing another tag (with `--tag`). When removing tags with `-r`, wildcards are allowed (`*` to match multiple characters, `?` to match a single character). With `--regex`, regular expressions will be interpreted instead of wildcards. For all tag removals the match is case insensitive by default, but if the tag search string contains any uppercase letters, the match will become case sensitive automatically. Tag name arguments do not need to be prefixed with @."
+    )]
+    Tag {
+        /// Tags to add/remove
+        #[arg(value_name = "TAG", required = true)]
+        tags: Vec<String>,
+
+        /// Autotag entries based on autotag configuration
+        #[arg(short = 'a', long = "autotag")]
+        autotag: bool,
+
+        /// Boolean used to combine multiple tags (AND|OR|NOT)
+        #[arg(long = "bool", default_value = "pattern")]
+        bool_op: String,
+
+        /// How many recent entries to tag (0 for all)
+        #[arg(short = 'c', long = "count", default_value = "1")]
+        count: usize,
+
+        /// Case sensitivity for search string matching [(c)ase-sensitive, (i)gnore, (s)mart]
+        #[arg(long = "case", default_value = "smart")]
+        case: String,
+
+        /// Include current date/time with tag
+        #[arg(short = 'd', long = "date")]
+        date: bool,
+
+        /// Don't ask permission to tag all entries when count is 0
+        #[arg(long = "force")]
+        force: bool,
+
+        /// Select item(s) to tag from a menu of matching entries
+        #[arg(short = 'i', long = "interactive")]
+        interactive: bool,
+
+        /// Tag items that *don't* match search/tag filters
+        #[arg(long = "not")]
+        not: bool,
+
+        /// Remove given tag(s)
+        #[arg(short = 'r', long = "remove")]
+        remove: bool,
+
+        /// Interpret tag string as regular expression (with --remove)
+        #[arg(long = "regex")]
+        regex: bool,
+
+        /// Replace existing tag with tag argument
+        #[arg(long = "rename")]
+        rename: Option<String>,
+
+        /// Section (may be used more than once)
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Filter entries using a search query
+        #[arg(long = "search")]
+        search: Option<String>,
+
+        /// Filter entries by tag
+        #[arg(long = "tag")]
+        tag: Option<String>,
+
+        /// Tag last entry (or entries) not marked @done
+        #[arg(short = 'u', long = "unfinished")]
+        unfinished: bool,
+
+        /// Include a value, e.g. @tag(value)
+        #[arg(short = 'v', long = "value")]
+        value: Option<String>,
+
+        /// Perform a tag value query
+        #[arg(long = "val")]
+        val: Vec<String>,
+
+        /// Force exact search string matching (case sensitive)
+        #[arg(short = 'x', long = "exact")]
+        exact: bool,
+    },
+
+    /// Add a note to the last entry
+    #[command(
+        about = "Add a note to the last entry",
+        long_about = "If -r is provided with no other arguments, the last note is removed. If new content is specified through arguments or STDIN, any previous note will be replaced with the new one. Use -e to load the last entry in a text editor where you can append a note."
+    )]
+    Note {
+        /// Note text to add
+        #[arg(value_name = "NOTE_TEXT")]
+        note: Vec<String>,
+
+        /// Prompt for note via multi-line input
+        #[arg(long = "ask")]
+        ask: bool,
+
+        /// Boolean used to combine multiple tags (AND|OR|NOT)
+        #[arg(long = "bool", default_value = "pattern")]
+        bool_op: String,
+
+        /// Case sensitivity for search string matching [(c)ase-sensitive, (i)gnore, (s)mart]
+        #[arg(long = "case", default_value = "smart")]
+        case: String,
+
+        /// Edit entry with editor
+        #[arg(short = 'e', long = "editor")]
+        editor: bool,
+
+        /// Select item for new note from a menu of matching entries
+        #[arg(short = 'i', long = "interactive")]
+        interactive: bool,
+
+        /// Note items that *don't* match search/tag filters
+        #[arg(long = "not")]
+        not: bool,
+
+        /// Replace/Remove last entry's note (default append)
+        #[arg(short = 'r', long = "remove")]
+        remove: bool,
+
+        /// Section (may be used more than once)
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Filter entries using a search query
+        #[arg(long = "search")]
+        search: Option<String>,
+
+        /// Filter entries by tag
+        #[arg(long = "tag")]
+        tag: Option<String>,
+
+        /// Perform a tag value query
+        #[arg(long = "val")]
+        val: Vec<String>,
+
+        /// Force exact search string matching (case sensitive)
+        #[arg(short = 'x', long = "exact")]
+        exact: bool,
+    },
+
     /// Delete entries from the doing file
     Delete {
         /// Number of entries to delete (default: 1)
@@ -343,5 +615,249 @@ pub enum Commands {
         /// Force deletion without confirmation
         #[arg(short = 'f', long = "force")]
         force: bool,
+    },
+
+    /// Mark last entry as flagged
+    #[command(
+        about = "Mark last entry as flagged",
+        long_about = "Mark the last entry as @flagged. If provided with arguments, mark entries matching the given search filter (search terms, `--tag`, `--search`). The argument can be a count of recent entries, an index for an entry, or a search string. Use `--remove` to unflag."
+    )]
+    Mark {
+        /// Boolean used to combine multiple tags (AND|OR|NOT)
+        #[arg(long = "bool", default_value = "pattern")]
+        bool_op: String,
+
+        /// How many recent entries to flag (0 for all)
+        #[arg(short = 'c', long = "count", default_value = "1")]
+        count: usize,
+
+        /// Case sensitivity for search string matching [(c)ase-sensitive, (i)gnore, (s)mart]
+        #[arg(long = "case", default_value = "smart")]
+        case: String,
+
+        /// Include current date/time with flag
+        #[arg(short = 'd', long = "date")]
+        date: bool,
+
+        /// Don't ask permission to flag all entries when count is 0
+        #[arg(long = "force")]
+        force: bool,
+
+        /// Select item(s) to flag from a menu of matching entries
+        #[arg(short = 'i', long = "interactive")]
+        interactive: bool,
+
+        /// Flag items that *don't* match search/tag filters
+        #[arg(long = "not")]
+        not: bool,
+
+        /// Remove flag
+        #[arg(short = 'r', long = "remove")]
+        remove: bool,
+
+        /// Section (may be used more than once)
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Filter entries using a search query
+        #[arg(long = "search")]
+        search: Option<String>,
+
+        /// Filter entries by tag
+        #[arg(long = "tag")]
+        tag: Option<String>,
+
+        /// Flag last entry (or entries) not marked @done
+        #[arg(short = 'u', long = "unfinished")]
+        unfinished: bool,
+
+        /// Perform a tag value query
+        #[arg(long = "val")]
+        val: Vec<String>,
+
+        /// Force exact search string matching (case sensitive)
+        #[arg(short = 'x', long = "exact")]
+        exact: bool,
+    },
+
+    /// Alias for mark command
+    Flag {
+        /// Boolean used to combine multiple tags (AND|OR|NOT)
+        #[arg(long = "bool", default_value = "pattern")]
+        bool_op: String,
+
+        /// How many recent entries to flag (0 for all)
+        #[arg(short = 'c', long = "count", default_value = "1")]
+        count: usize,
+
+        /// Case sensitivity for search string matching [(c)ase-sensitive, (i)gnore, (s)mart]
+        #[arg(long = "case", default_value = "smart")]
+        case: String,
+
+        /// Include current date/time with flag
+        #[arg(short = 'd', long = "date")]
+        date: bool,
+
+        /// Don't ask permission to flag all entries when count is 0
+        #[arg(long = "force")]
+        force: bool,
+
+        /// Select item(s) to flag from a menu of matching entries
+        #[arg(short = 'i', long = "interactive")]
+        interactive: bool,
+
+        /// Flag items that *don't* match search/tag filters
+        #[arg(long = "not")]
+        not: bool,
+
+        /// Remove flag
+        #[arg(short = 'r', long = "remove")]
+        remove: bool,
+
+        /// Section (may be used more than once)
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Filter entries using a search query
+        #[arg(long = "search")]
+        search: Option<String>,
+
+        /// Filter entries by tag
+        #[arg(long = "tag")]
+        tag: Option<String>,
+
+        /// Flag last entry (or entries) not marked @done
+        #[arg(short = 'u', long = "unfinished")]
+        unfinished: bool,
+
+        /// Perform a tag value query
+        #[arg(long = "val")]
+        val: Vec<String>,
+
+        /// Force exact search string matching (case sensitive)
+        #[arg(short = 'x', long = "exact")]
+        exact: bool,
+    },
+
+    /// Reset the start time of an entry
+    #[command(
+        about = "Reset the start time of an entry",
+        long_about = "Update the start time of the last entry or the last entry matching a tag/search filter. If no argument is provided, the start time will be reset to the current time. If a date string is provided as an argument, the start time will be set to the parsed result."
+    )]
+    Reset {
+        /// Date string to set as new start time
+        #[arg(value_name = "DATE_STRING")]
+        date_string: Option<String>,
+
+        /// Boolean used to combine multiple tags (AND|OR|NOT)
+        #[arg(long = "bool", default_value = "pattern")]
+        bool_op: String,
+
+        /// Case sensitivity for search string matching [(c)ase-sensitive, (i)gnore, (s)mart]
+        #[arg(long = "case", default_value = "smart")]
+        case: String,
+
+        /// Start and end times as a date/time range (e.g., "1am to 8am")
+        #[arg(long = "from")]
+        from: Option<String>,
+
+        /// Select from a menu of matching entries
+        #[arg(short = 'i', long = "interactive")]
+        interactive: bool,
+
+        /// Change start date but do not remove @done (shortcut for --no-resume)
+        #[arg(short = 'n', conflicts_with = "resume")]
+        no_resume: bool,
+
+        /// Reset items that *don't* match search/tag filters
+        #[arg(long = "not")]
+        not: bool,
+
+        /// Resume entry (remove @done)
+        #[arg(short = 'r', long = "resume", default_value = "true")]
+        resume: bool,
+
+        /// Limit search to section (may be used more than once)
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Filter entries using a search query
+        #[arg(long = "search")]
+        search: Option<String>,
+
+        /// Set completion date to start date plus interval (XX[mhd] or HH:MM)
+        #[arg(short = 't', long = "took", alias = "for")]
+        took: Option<String>,
+
+        /// Filter entries by tag
+        #[arg(long = "tag")]
+        tag: Option<String>,
+
+        /// Perform a tag value query
+        #[arg(long = "val")]
+        val: Vec<String>,
+
+        /// Force exact search string matching (case sensitive)
+        #[arg(short = 'x', long = "exact")]
+        exact: bool,
+    },
+
+    /// Alias for reset command
+    Begin {
+        /// Date string to set as new start time
+        #[arg(value_name = "DATE_STRING")]
+        date_string: Option<String>,
+
+        /// Boolean used to combine multiple tags (AND|OR|NOT)
+        #[arg(long = "bool", default_value = "pattern")]
+        bool_op: String,
+
+        /// Case sensitivity for search string matching [(c)ase-sensitive, (i)gnore, (s)mart]
+        #[arg(long = "case", default_value = "smart")]
+        case: String,
+
+        /// Start and end times as a date/time range (e.g., "1am to 8am")
+        #[arg(long = "from")]
+        from: Option<String>,
+
+        /// Select from a menu of matching entries
+        #[arg(short = 'i', long = "interactive")]
+        interactive: bool,
+
+        /// Change start date but do not remove @done (shortcut for --no-resume)
+        #[arg(short = 'n', conflicts_with = "resume")]
+        no_resume: bool,
+
+        /// Reset items that *don't* match search/tag filters
+        #[arg(long = "not")]
+        not: bool,
+
+        /// Resume entry (remove @done)
+        #[arg(short = 'r', long = "resume", default_value = "true")]
+        resume: bool,
+
+        /// Limit search to section (may be used more than once)
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Filter entries using a search query
+        #[arg(long = "search")]
+        search: Option<String>,
+
+        /// Set completion date to start date plus interval (XX[mhd] or HH:MM)
+        #[arg(short = 't', long = "took", alias = "for")]
+        took: Option<String>,
+
+        /// Filter entries by tag
+        #[arg(long = "tag")]
+        tag: Option<String>,
+
+        /// Perform a tag value query
+        #[arg(long = "val")]
+        val: Vec<String>,
+
+        /// Force exact search string matching (case sensitive)
+        #[arg(short = 'x', long = "exact")]
+        exact: bool,
     },
 }

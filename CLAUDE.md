@@ -198,6 +198,8 @@ cargo test test_name
      - Detail view for entries
      - Note display
      - Elapsed time for done entries
+     - Delete entries with 'd' key
+     - Space bar to toggle @done status
 
 4. **Phase 4: File Persistence**
    - ✅ TaskPaper format parser with UUID support
@@ -223,15 +225,40 @@ cargo test test_name
    - ✅ Duration tracking between start and @done times
      - Displayed in recent command and TUI
      - Format: HH:MM:SS
+   - ✅ `delete` - Delete entries from the doing file
+     - Confirmation prompt (bypass with --force)
+     - Advanced filtering (search, tags, sections)
+     - TUI integration with 'd' key
 
 ### 🚧 Next Implementation Phases
 
-6. **Phase 6: Entry Management**
-   - `again, resume` - Repeat last entry as new entry
-   - `note` - Add a note to the last entry
-   - `tag` - Add tag(s) to last entry
-   - `mark, flag` - Mark last entry as flagged
-   - `reset, begin` - Reset the start time of an entry
+6. **Phase 6: Entry Management** ✅ COMPLETE
+   - ✅ `again, resume` - Repeat last entry as new entry
+     - Duplicates most recent entry with new timestamp
+     - Removes @done tag from duplicated entry
+     - Advanced filtering (search, tags, sections, NOT mode)
+     - Backdating with --back
+     - Note management (--note, --ask)
+     - Section control with --in
+   - ✅ `note` - Add a note to the last entry
+     - Append, replace, or remove notes
+     - Multi-line note support with --ask
+     - Advanced filtering options
+   - ✅ `tag` - Add tag(s) to last entry
+     - Add/remove tags with wildcard support
+     - Rename tags across entries
+     - Date tagging with -d flag
+     - Tag values with --value
+   - ✅ `mark, flag` - Mark last entry as flagged
+     - Add/remove @flagged tag
+     - Date flagging with -d flag
+     - Advanced filtering options
+   - ✅ `reset, begin` - Reset the start time of an entry
+     - Reset to current time or specified date
+     - Resume entries by removing @done (default)
+     - Option to keep @done with -n flag
+     - --took option to set completion time
+     - --from option for time ranges
 
 7. **Phase 7: Viewing & Search**
    - `show` - List all entries with filtering
@@ -270,13 +297,12 @@ TaskPaper format basics:
 Example:
 ```
 Currently:
-- Working on daily-log app @done(2024-01-15 14:30)
-- Review PR for feature X @in_progress
-    This needs careful attention to the API changes
+- 2025-07-28 20:41 | Meeting with client @flagged @importance(high) @done(2025-07-28 20:40) <17b6ef06cdab4396baf5ffb1786a0634>
+- 2025-07-28 15:00 | Testing reset command <75eb23d271684c5786a08cc6a69c9c5d>
+- 2025-07-28 09:03 | Testing the recent command display format @testing @done(2025-07-28 17:37) <ab17cb75e9754598a4dbfe9ca790f6e4>
 
 Archive:
-- Update documentation @priority(high) @done(2024-01-14 16:30)
-- Refactor authentication module @done(2024-01-13 14:00)
+- 2025-07-28 17:27 | Archived completed task @done(2025-07-28 17:27) <2584ad82acb54469a6096ce1dff966a0>
 ```
 
 ## Usage Examples
@@ -324,31 +350,103 @@ daily-log Working on documentation    # Same as: daily-log now "Working on docum
 daily-log Fix bug in login system     # Same as: daily-log now "Fix bug in login system"
 ```
 
-### With Tags and Notes
+### Completion & Time Tracking
 ```bash
-# Add entry with tags
-daily-log now "Deploy to staging" --tag environment=staging --tag version=2.1.0
+# Mark entries as done
+daily-log done              # Mark last entry as done with current time
+daily-log did              # Alias for done
+daily-log done "Quick task" # Create and immediately complete an entry
+daily-log done --at "30 minutes ago"  # Set specific completion time
+daily-log done --took 2h    # Set duration (adds @done timestamp calculated from start)
+daily-log done --remove     # Remove @done tag from last entry
 
-# Add entry with note
-daily-log now "Meeting with client" --note "Discussed new features and timeline"
+# Finish multiple entries
+daily-log finish            # Mark last entry as @done
+daily-log finish 3          # Mark last 3 entries as @done
+daily-log finish --tag meeting --at "3pm"  # Finish entries with @meeting tag
+daily-log finish --auto     # Auto-calculate completion times from next entry's start
+
+# Cancel entries (mark done without time)
+daily-log cancel            # Cancel last entry (adds @done without timestamp)
+daily-log cancel 2          # Cancel last 2 entries
+daily-log cancel --tag abandoned  # Cancel entries with @abandoned tag
+```
+
+### Entry Management
+```bash
+# Repeat/Resume entries
+daily-log again             # Duplicate the most recent entry
+daily-log resume            # Same as again (alias)
+daily-log again --tag project1 --in Projects  # Find entry with @project1 and create in Projects section
+daily-log resume --search "meeting" --back "2 hours ago"  # Find meeting entry and backdate
+daily-log again --note "Continuing where I left off"  # Add a different note to the duplicated entry
+
+# Add/modify notes
+daily-log note "Additional details about the task"  # Add note to last entry
+daily-log note --remove     # Remove note from last entry
+daily-log note --ask        # Interactive multi-line note entry
+daily-log note --search "bug fix" "Found the root cause"  # Add note to matching entry
+
+# Tag management
+daily-log tag @urgent       # Add @urgent tag to last entry
+daily-log tag @bug @fixed   # Add multiple tags
+daily-log tag @priority high -d  # Add tag with date
+daily-log tag --remove @wip # Remove @wip tag
+daily-log tag --rename @wip @done  # Rename all @wip tags to @done
+daily-log tag @status --value "in progress"  # Add tag with value
+
+# Mark/flag entries
+daily-log mark              # Add @flagged tag to last entry
+daily-log flag              # Alias for mark
+daily-log mark -d           # Flag with current date/time
+daily-log mark --remove     # Remove @flagged tag
+daily-log mark --search "important" -c 5  # Flag 5 entries matching "important"
+
+# Reset entry times
+daily-log reset             # Reset last entry to current time and remove @done
+daily-log begin             # Alias for reset
+daily-log reset "3pm"       # Reset to specific time
+daily-log reset -n          # Reset time but keep @done tag
+daily-log reset --took 1h   # Reset and set completion time
+daily-log reset --tag meeting "yesterday 2pm"  # Reset meeting entry to yesterday
+
+# Delete entries
+daily-log delete            # Delete the most recent entry (with confirmation)
+daily-log delete 3          # Delete the 3 most recent entries
+daily-log delete --search "test" --force  # Delete entries containing "test" without confirmation
+daily-log delete --tag done # Delete entries with @done tag
 ```
 
 ## Future Command Examples (Not Yet Implemented)
 ```bash
-# Mark as done
-daily-log done            # Mark last entry as done
-daily-log finish          # Complete current task and add end time
-
-# Time tracking
-daily-log on "Working on feature"     # Start timing
-daily-log off                         # Stop timing
-
 # Advanced viewing
+daily-log show              # List all entries with filtering
 daily-log show @tag=priority          # Show entries with priority tag
 daily-log show --from "2024-01-01"   # Show entries from date
-daily-log archive                     # Archive completed entries
+daily-log grep "bug"        # Search for entries containing "bug"
+daily-log search "/regex/"  # Search with regex
+daily-log on 2024-01-15     # Show entries for specific date
+daily-log since yesterday   # Show entries since yesterday
+daily-log yesterday         # Show yesterday's entries
 
-# Repeat/Resume
-daily-log again           # Repeat the last entry
-daily-log resume          # Resume the last entry
+# Organization
+daily-log sections          # List all sections
+daily-log sections add "Projects"  # Add new section
+daily-log archive           # Move completed entries to Archive
+daily-log move 3 --to Archive  # Move 3 entries to Archive section
+daily-log rotate            # Archive old entries to separate file
+daily-log tags              # List all tags used
+
+# Configuration & Views
+daily-log config            # Edit configuration
+daily-log view work         # Display custom "work" view
+daily-log views             # List available views
+daily-log open              # Open doing file in editor
+
+# Advanced features
+daily-log undo              # Undo last change
+daily-log redo              # Redo undone change
+daily-log select            # Interactive menu
+daily-log meanwhile         # Handle @meanwhile tasks
+daily-log import data.csv   # Import entries from file
 ```

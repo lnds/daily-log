@@ -81,17 +81,35 @@ pub fn handle_now(
         Some(n)
     } else if ask {
         // Multi-line note input
-        println!("Enter note (press Ctrl+D or enter a blank line to finish):");
-        let mut note_lines = Vec::new();
+        println!("Add a note:");
+        println!("Enter a blank line (return twice) to end editing and save, CTRL-C to cancel");
+        let mut lines = Vec::new();
+        let stdin = io::stdin();
+        let mut empty_line_count = 0;
+        
         loop {
             let mut line = String::new();
-            if io::stdin().read_line(&mut line)? == 0 || line.trim().is_empty() {
-                break;
+            stdin.read_line(&mut line)?;
+            
+            if line.trim().is_empty() {
+                empty_line_count += 1;
+                if empty_line_count >= 2 {
+                    break;
+                }
+                lines.push(String::new());
+            } else {
+                empty_line_count = 0;
+                lines.push(line.trim_end().to_string());
             }
-            note_lines.push(line.trim_end().to_string());
         }
-        if !note_lines.is_empty() {
-            Some(note_lines.join("\n"))
+        
+        // Remove trailing empty lines
+        while lines.last().map_or(false, |l| l.is_empty()) {
+            lines.pop();
+        }
+        
+        if !lines.is_empty() {
+            Some(lines.join("\n"))
         } else {
             None
         }
