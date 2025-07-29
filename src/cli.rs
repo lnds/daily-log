@@ -860,4 +860,602 @@ pub enum Commands {
         #[arg(short = 'x', long = "exact")]
         exact: bool,
     },
+
+    /// List all entries
+    #[command(
+        about = "List all entries",
+        long_about = "The argument can be a section name, @tag(s) or both. \"pick\" or \"choose\" as an argument will offer a section menu."
+    )]
+    Show {
+        /// Section or @tags to show
+        #[arg(value_name = "SECTION|@TAGS")]
+        args: Vec<String>,
+
+        /// Age (oldest|newest)
+        #[arg(short = 'a', long = "age", default_value = "newest")]
+        age: String,
+
+        /// Show entries newer than date
+        #[arg(long = "after")]
+        after: Option<String>,
+
+        /// Show entries older than date
+        #[arg(long = "before")]
+        before: Option<String>,
+
+        /// Boolean used to combine multiple tags (AND|OR|NOT)
+        #[arg(long = "bool", default_value = "pattern")]
+        bool_op: String,
+
+        /// Max count to show
+        #[arg(short = 'c', long = "count", default_value = "0")]
+        count: usize,
+
+        /// Case sensitivity for search string matching [(c)ase-sensitive, (i)gnore, (s)mart]
+        #[arg(long = "case", default_value = "smart")]
+        case: String,
+
+        /// Output using a template from configuration
+        #[arg(long = "config_template")]
+        config_template: Option<String>,
+
+        /// Show elapsed time on entries without @done tag
+        #[arg(long = "duration")]
+        duration: bool,
+
+        /// Edit matching entries with editor
+        #[arg(short = 'e', long = "editor")]
+        editor: bool,
+
+        /// Date range to show
+        #[arg(long = "from")]
+        from: Option<String>,
+
+        /// Highlight search matches in output
+        #[arg(long = "hilite")]
+        hilite: bool,
+
+        /// Select from a menu of matching entries
+        #[arg(short = 'i', long = "interactive")]
+        interactive: bool,
+
+        /// Select section or tag to display from a menu
+        #[arg(short = 'm', long = "menu")]
+        menu: bool,
+
+        /// Show items that *don't* match search/tag filters
+        #[arg(long = "not")]
+        not: bool,
+
+        /// Output format
+        #[arg(short = 'o', long = "output")]
+        output: Option<String>,
+
+        /// Only show items with recorded time intervals
+        #[arg(long = "only_timed")]
+        only_timed: bool,
+
+        /// Only show entries within section
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Save all current options as a new view
+        #[arg(long = "save")]
+        save: Option<String>,
+
+        /// Filter entries using a search query
+        #[arg(long = "search")]
+        search: Option<String>,
+
+        /// Sort order (asc/desc)
+        #[arg(long = "sort", default_value = "desc")]
+        sort: String,
+
+        /// Show time intervals on @done tasks
+        #[arg(short = 't', long = "times", default_value = "true")]
+        times: bool,
+
+        /// Filter entries by tag
+        #[arg(long = "tag")]
+        tag: Option<String>,
+
+        /// Tag sort direction (asc|desc)
+        #[arg(long = "tag_order", default_value = "asc")]
+        tag_order: String,
+
+        /// Sort tags by (name|time)
+        #[arg(long = "tag_sort", default_value = "name")]
+        tag_sort: String,
+
+        /// Override output format with template
+        #[arg(long = "template")]
+        template: Option<String>,
+
+        /// Title string for output formats
+        #[arg(long = "title")]
+        title: Option<String>,
+
+        /// Show time totals at end
+        #[arg(long = "totals")]
+        totals: bool,
+
+        /// Perform a tag value query
+        #[arg(long = "val")]
+        val: Vec<String>,
+
+        /// Force exact search string matching
+        #[arg(short = 'x', long = "exact")]
+        exact: bool,
+    },
+
+    /// Search for entries
+    #[command(
+        about = "Search for entries",
+        long_about = "Search all sections for entries matching text or regular expression"
+    )]
+    Grep {
+        /// Search pattern
+        #[arg(value_name = "SEARCH_PATTERN")]
+        pattern: String,
+
+        /// Search entries newer than date
+        #[arg(long = "after")]
+        after: Option<String>,
+
+        /// Search entries older than date
+        #[arg(long = "before")]
+        before: Option<String>,
+
+        /// Boolean used to combine multiple tags (AND|OR|NOT)
+        #[arg(long = "bool", default_value = "pattern")]
+        bool_op: String,
+
+        /// Case sensitivity for search string matching [(c)ase-sensitive, (i)gnore, (s)mart]
+        #[arg(long = "case", default_value = "smart")]
+        case: String,
+
+        /// Output using a template from configuration
+        #[arg(long = "config_template")]
+        config_template: Option<String>,
+
+        /// Delete matching entries
+        #[arg(short = 'd', long = "delete")]
+        delete: bool,
+
+        /// Show elapsed time on entries without @done tag
+        #[arg(long = "duration")]
+        duration: bool,
+
+        /// Edit matching entries with editor
+        #[arg(short = 'e', long = "editor")]
+        editor: bool,
+
+        /// Date range to search
+        #[arg(long = "from")]
+        from: Option<String>,
+
+        /// Highlight search matches in output
+        #[arg(long = "hilite")]
+        hilite: bool,
+
+        /// Display an interactive menu of results
+        #[arg(short = 'i', long = "interactive")]
+        interactive: bool,
+
+        /// Search items that *don't* match
+        #[arg(long = "not")]
+        not: bool,
+
+        /// Output format
+        #[arg(short = 'o', long = "output")]
+        output: Option<String>,
+
+        /// Only show items with recorded time intervals
+        #[arg(long = "only_timed")]
+        only_timed: bool,
+
+        /// Section (may be used more than once)
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Save all current options as a new view
+        #[arg(long = "save")]
+        save: Option<String>,
+
+        /// Show time intervals on @done tasks
+        #[arg(short = 't', long = "times", default_value = "true")]
+        times: bool,
+
+        /// Filter entries by tag
+        #[arg(long = "tag")]
+        tag: Option<String>,
+
+        /// Tag sort direction (asc|desc)
+        #[arg(long = "tag_order", default_value = "asc")]
+        tag_order: String,
+
+        /// Sort tags by (name|time)
+        #[arg(long = "tag_sort", default_value = "name")]
+        tag_sort: String,
+
+        /// Override output format with template
+        #[arg(long = "template")]
+        template: Option<String>,
+
+        /// Title string for output formats
+        #[arg(long = "title")]
+        title: Option<String>,
+
+        /// Show time totals at end
+        #[arg(long = "totals")]
+        totals: bool,
+
+        /// Perform a tag value query
+        #[arg(long = "val")]
+        val: Vec<String>,
+
+        /// Force exact string matching
+        #[arg(short = 'x', long = "exact")]
+        exact: bool,
+    },
+
+    /// Alias for grep
+    Search {
+        /// Search pattern
+        #[arg(value_name = "SEARCH_PATTERN")]
+        pattern: String,
+
+        /// Search entries newer than date
+        #[arg(long = "after")]
+        after: Option<String>,
+
+        /// Search entries older than date
+        #[arg(long = "before")]
+        before: Option<String>,
+
+        /// Boolean used to combine multiple tags (AND|OR|NOT)
+        #[arg(long = "bool", default_value = "pattern")]
+        bool_op: String,
+
+        /// Case sensitivity for search string matching [(c)ase-sensitive, (i)gnore, (s)mart]
+        #[arg(long = "case", default_value = "smart")]
+        case: String,
+
+        /// Output using a template from configuration
+        #[arg(long = "config_template")]
+        config_template: Option<String>,
+
+        /// Delete matching entries
+        #[arg(short = 'd', long = "delete")]
+        delete: bool,
+
+        /// Show elapsed time on entries without @done tag
+        #[arg(long = "duration")]
+        duration: bool,
+
+        /// Edit matching entries with editor
+        #[arg(short = 'e', long = "editor")]
+        editor: bool,
+
+        /// Date range to search
+        #[arg(long = "from")]
+        from: Option<String>,
+
+        /// Highlight search matches in output
+        #[arg(long = "hilite")]
+        hilite: bool,
+
+        /// Display an interactive menu of results
+        #[arg(short = 'i', long = "interactive")]
+        interactive: bool,
+
+        /// Search items that *don't* match
+        #[arg(long = "not")]
+        not: bool,
+
+        /// Output format
+        #[arg(short = 'o', long = "output")]
+        output: Option<String>,
+
+        /// Only show items with recorded time intervals
+        #[arg(long = "only_timed")]
+        only_timed: bool,
+
+        /// Section (may be used more than once)
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Save all current options as a new view
+        #[arg(long = "save")]
+        save: Option<String>,
+
+        /// Show time intervals on @done tasks
+        #[arg(short = 't', long = "times", default_value = "true")]
+        times: bool,
+
+        /// Filter entries by tag
+        #[arg(long = "tag")]
+        tag: Option<String>,
+
+        /// Tag sort direction (asc|desc)
+        #[arg(long = "tag_order", default_value = "asc")]
+        tag_order: String,
+
+        /// Sort tags by (name|time)
+        #[arg(long = "tag_sort", default_value = "name")]
+        tag_sort: String,
+
+        /// Override output format with template
+        #[arg(long = "template")]
+        template: Option<String>,
+
+        /// Title string for output formats
+        #[arg(long = "title")]
+        title: Option<String>,
+
+        /// Show time totals at end
+        #[arg(long = "totals")]
+        totals: bool,
+
+        /// Perform a tag value query
+        #[arg(long = "val")]
+        val: Vec<String>,
+
+        /// Force exact string matching
+        #[arg(short = 'x', long = "exact")]
+        exact: bool,
+    },
+
+    /// List entries for a date
+    #[command(
+        about = "List entries for a date",
+        long_about = "Date argument can be natural language. Use \"to\" or \"through\" between two dates for a range."
+    )]
+    On {
+        /// Date string
+        #[arg(value_name = "DATE_STRING")]
+        date_string: String,
+
+        /// View entries after specified time
+        #[arg(long = "after")]
+        after: Option<String>,
+
+        /// View entries before specified time
+        #[arg(long = "before")]
+        before: Option<String>,
+
+        /// Boolean used to combine multiple tags (AND|OR|NOT)
+        #[arg(long = "bool", default_value = "pattern")]
+        bool_op: String,
+
+        /// Case sensitivity for search string matching [(c)ase-sensitive, (i)gnore, (s)mart]
+        #[arg(long = "case", default_value = "smart")]
+        case: String,
+
+        /// Output using a template from configuration
+        #[arg(long = "config_template")]
+        config_template: Option<String>,
+
+        /// Show elapsed time on entries without @done tag
+        #[arg(long = "duration")]
+        duration: bool,
+
+        /// Time range to show
+        #[arg(long = "from")]
+        from: Option<String>,
+
+        /// Show items that *don't* match search/tag filters
+        #[arg(long = "not")]
+        not: bool,
+
+        /// Output format
+        #[arg(short = 'o', long = "output")]
+        output: Option<String>,
+
+        /// Only show items with recorded time intervals
+        #[arg(long = "only_timed")]
+        only_timed: bool,
+
+        /// Section (may be used more than once)
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Save all current options as a new view
+        #[arg(long = "save")]
+        save: Option<String>,
+
+        /// Filter entries using a search query
+        #[arg(long = "search")]
+        search: Option<String>,
+
+        /// Show time intervals on @done tasks
+        #[arg(short = 't', long = "times", default_value = "true")]
+        times: bool,
+
+        /// Filter entries by tag
+        #[arg(long = "tag")]
+        tag: Option<String>,
+
+        /// Tag sort direction (asc|desc)
+        #[arg(long = "tag_order", default_value = "asc")]
+        tag_order: String,
+
+        /// Sort tags by (name|time)
+        #[arg(long = "tag_sort", default_value = "name")]
+        tag_sort: String,
+
+        /// Override output format with template
+        #[arg(long = "template")]
+        template: Option<String>,
+
+        /// Title string for output formats
+        #[arg(long = "title")]
+        title: Option<String>,
+
+        /// Show time totals at end
+        #[arg(long = "totals")]
+        totals: bool,
+
+        /// Perform a tag value query
+        #[arg(long = "val")]
+        val: Vec<String>,
+
+        /// Force exact search string matching
+        #[arg(short = 'x', long = "exact")]
+        exact: bool,
+    },
+
+    /// List entries since a date
+    #[command(
+        about = "List entries since a date",
+        long_about = "Date argument can be natural language and are always interpreted as being in the past."
+    )]
+    Since {
+        /// Date string
+        #[arg(value_name = "DATE_STRING")]
+        date_string: String,
+
+        /// Boolean used to combine multiple tags (AND|OR|NOT)
+        #[arg(long = "bool", default_value = "pattern")]
+        bool_op: String,
+
+        /// Case sensitivity for search string matching [(c)ase-sensitive, (i)gnore, (s)mart]
+        #[arg(long = "case", default_value = "smart")]
+        case: String,
+
+        /// Output using a template from configuration
+        #[arg(long = "config_template")]
+        config_template: Option<String>,
+
+        /// Show elapsed time on entries without @done tag
+        #[arg(long = "duration")]
+        duration: bool,
+
+        /// Since items that *don't* match search/tag filters
+        #[arg(long = "not")]
+        not: bool,
+
+        /// Output format
+        #[arg(short = 'o', long = "output")]
+        output: Option<String>,
+
+        /// Only show items with recorded time intervals
+        #[arg(long = "only_timed")]
+        only_timed: bool,
+
+        /// Section (may be used more than once)
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Save all current options as a new view
+        #[arg(long = "save")]
+        save: Option<String>,
+
+        /// Filter entries using a search query
+        #[arg(long = "search")]
+        search: Option<String>,
+
+        /// Show time intervals on @done tasks
+        #[arg(short = 't', long = "times", default_value = "true")]
+        times: bool,
+
+        /// Filter entries by tag
+        #[arg(long = "tag")]
+        tag: Option<String>,
+
+        /// Tag sort direction (asc|desc)
+        #[arg(long = "tag_order", default_value = "asc")]
+        tag_order: String,
+
+        /// Sort tags by (name|time)
+        #[arg(long = "tag_sort", default_value = "name")]
+        tag_sort: String,
+
+        /// Override output format with template
+        #[arg(long = "template")]
+        template: Option<String>,
+
+        /// Title string for output formats
+        #[arg(long = "title")]
+        title: Option<String>,
+
+        /// Show time totals at end
+        #[arg(long = "totals")]
+        totals: bool,
+
+        /// Perform a tag value query
+        #[arg(long = "val")]
+        val: Vec<String>,
+
+        /// Force exact search string matching
+        #[arg(short = 'x', long = "exact")]
+        exact: bool,
+    },
+
+    /// List entries from yesterday
+    #[command(
+        about = "List entries from yesterday",
+        long_about = "Show only entries with start times within the previous 24 hour period."
+    )]
+    Yesterday {
+        /// View entries after specified time
+        #[arg(long = "after")]
+        after: Option<String>,
+
+        /// View entries before specified time
+        #[arg(long = "before")]
+        before: Option<String>,
+
+        /// Output using a template from configuration
+        #[arg(long = "config_template")]
+        config_template: Option<String>,
+
+        /// Show elapsed time on entries without @done tag
+        #[arg(long = "duration")]
+        duration: bool,
+
+        /// Time range to show
+        #[arg(long = "from")]
+        from: Option<String>,
+
+        /// Output format
+        #[arg(short = 'o', long = "output")]
+        output: Option<String>,
+
+        /// Only show items with recorded time intervals
+        #[arg(long = "only_timed")]
+        only_timed: bool,
+
+        /// Specify a section
+        #[arg(short = 's', long = "section")]
+        sections: Vec<String>,
+
+        /// Save all current options as a new view
+        #[arg(long = "save")]
+        save: Option<String>,
+
+        /// Show time intervals on @done tasks
+        #[arg(short = 't', long = "times", default_value = "true")]
+        times: bool,
+
+        /// Tag sort direction (asc|desc)
+        #[arg(long = "tag_order", default_value = "asc")]
+        tag_order: String,
+
+        /// Sort tags by (name|time)
+        #[arg(long = "tag_sort", default_value = "name")]
+        tag_sort: String,
+
+        /// Override output format with template
+        #[arg(long = "template")]
+        template: Option<String>,
+
+        /// Title string for output formats
+        #[arg(long = "title")]
+        title: Option<String>,
+
+        /// Show time totals at end
+        #[arg(long = "totals")]
+        totals: bool,
+    },
 }

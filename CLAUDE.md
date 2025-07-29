@@ -260,12 +260,28 @@ cargo test test_name
      - --took option to set completion time
      - --from option for time ranges
 
-7. **Phase 7: Viewing & Search**
-   - `show` - List all entries with filtering
-   - `grep, search` - Search for entries
-   - `on` - List entries for a specific date
-   - `since` - List entries since a date
-   - `yesterday` - List entries from yesterday
+7. **Phase 7: Viewing & Search** ✅ COMPLETE
+   - ✅ `show` - List all entries with filtering
+     - Comprehensive filtering by search, tags, sections, dates
+     - Multiple output formats (JSON, CSV, HTML, Markdown, TaskPaper, Timeline)
+     - Case sensitivity modes (smart/ignore/case-sensitive)
+     - Boolean operators for combining filters (AND/OR/NOT/PATTERN)
+     - Time range filtering with natural language support
+   - ✅ `grep, search` - Search for entries
+     - Regex and fuzzy matching support
+     - Delete mode for removing matching entries
+     - Highlights search matches in output
+     - All filtering options from show command
+   - ✅ `on` - List entries for a specific date
+     - Natural language date parsing
+     - Date range support with "to/through/-" separators
+     - Time filtering within the date
+   - ✅ `since` - List entries since a date
+     - Always interprets dates as being in the past
+     - All filtering options available
+   - ✅ `yesterday` - List entries from yesterday
+     - Shows entries from previous 24-hour period
+     - Time filtering within the day
 
 8. **Phase 8: Organization & Archives**
    - `sections` - List, add, or remove sections
