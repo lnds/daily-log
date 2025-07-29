@@ -104,6 +104,26 @@ pub fn handle_done(
             }
             
             if found {
+                // If archive flag is set, move the entry to Archive section
+                if archive && let Some((time_str, desc, _done_time_str)) = &entry_info {
+                    // Find and remove from current section
+                    if let Some(entries) = doing_file.sections.get_mut(target_section) {
+                        if let Some(pos) = entries.iter().position(|e| 
+                            e.timestamp.format("%Y-%m-%d %H:%M").to_string() == *time_str && 
+                            e.description == *desc
+                        ) {
+                            let mut entry = entries.remove(pos);
+                            entry.section = "Archive".to_string();
+                            
+                            // Add to Archive section
+                            doing_file.sections
+                                .entry("Archive".to_string())
+                                .or_insert_with(Vec::new)
+                                .push(entry);
+                        }
+                    }
+                }
+                
                 save_taskpaper(&doing_file)?;
                 if let Some((time_str, desc, done_time_str)) = entry_info {
                     println!("{}: {} @done({})", time_str, desc, done_time_str);
@@ -339,22 +359,32 @@ fn parse_duration(duration_str: &str) -> Result<Duration, color_eyre::eyre::Erro
         }
     }
     
-    // Try to parse as XX[mhd]
-    if let Ok(re) = Regex::new(r"^(\d+)([mhd])$") {
-        if let Some(captures) = re.captures(duration_str) {
-            let value: i64 = captures[1].parse()?;
-            let unit = &captures[2];
-            
-            return match unit {
-                "m" => Ok(Duration::minutes(value)),
-                "h" => Ok(Duration::hours(value)),
-                "d" => Ok(Duration::days(value)),
-                _ => Err(color_eyre::eyre::eyre!("Invalid duration unit: {}", unit)),
-            };
-        }
+    // Try to parse compound durations like 2h30m
+    let mut total_duration = Duration::zero();
+    let duration_regex = Regex::new(r"(\d+)([dhms])")?;
+    let mut matched = false;
+    
+    for capture in duration_regex.captures_iter(duration_str) {
+        matched = true;
+        let value: i64 = capture[1].parse()?;
+        let unit = &capture[2];
+        
+        let unit_duration = match unit {
+            "s" => Duration::seconds(value),
+            "m" => Duration::minutes(value),
+            "h" => Duration::hours(value),
+            "d" => Duration::days(value),
+            _ => return Err(color_eyre::eyre::eyre!("Invalid duration unit: {}", unit)),
+        };
+        
+        total_duration = total_duration + unit_duration;
     }
     
-    Err(color_eyre::eyre::eyre!("Invalid duration format: {}. Use XX[mhd] or HH:MM", duration_str))
+    if matched {
+        Ok(total_duration)
+    } else {
+        Err(color_eyre::eyre::eyre!("Invalid duration format: {}. Use XX[dhms] or HH:MM", duration_str))
+    }
 }
 
 fn parse_from_range(from_str: &str) -> Result<(DateTime<Local>, DateTime<Local>), color_eyre::eyre::Error> {

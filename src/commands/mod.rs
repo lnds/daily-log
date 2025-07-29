@@ -17,6 +17,9 @@ pub mod on;
 pub mod since;
 pub mod yesterday;
 
+#[cfg(test)]
+mod tests;
+
 pub use last::handle_last;
 pub use now::handle_now;
 pub use recent::handle_recent;

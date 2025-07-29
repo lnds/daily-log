@@ -1,13 +1,6 @@
-mod app;
-mod cli;
-mod commands;
-mod display;
-mod filtering;
-mod models;
-mod storage;
-
-use crate::app::App;
-use crate::cli::{Cli, Commands};
+use daily_log::app::App;
+use daily_log::cli::{Cli, Commands};
+use daily_log::commands;
 use clap::Parser;
 
 fn main() -> color_eyre::Result<()> {

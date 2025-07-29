@@ -8,7 +8,22 @@ pub struct Config {
 
 impl Config {
     pub fn load() -> Self {
+        // Check for test config using thread ID
+        let test_var = format!("DOING_TEST_CONFIG_{:?}", std::thread::current().id());
+        if let Ok(config_path) = std::env::var(&test_var) {
+            if let Ok(content) = std::fs::read_to_string(&config_path) {
+                if let Ok(config) = serde_json::from_str(&content) {
+                    return config;
+                }
+            }
+        }
+        
         Self::default()
+    }
+
+    pub fn from_path(path: &std::path::Path) -> color_eyre::Result<Self> {
+        let content = std::fs::read_to_string(path)?;
+        Ok(serde_json::from_str(&content)?)
     }
 
     pub fn doing_file_path(&self) -> PathBuf {

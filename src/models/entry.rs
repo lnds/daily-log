@@ -66,7 +66,7 @@ impl Entry {
             " - {} | {} <{}>",
             self.timestamp.format("%Y-%m-%d %H:%M"),
             desc_with_tags,
-            self.uuid.as_simple()
+            self.uuid.as_hyphenated()
         );
         
         // Add note with proper indentation (2 spaces)

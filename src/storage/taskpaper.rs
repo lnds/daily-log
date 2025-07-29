@@ -21,7 +21,7 @@ pub fn parse_taskpaper(path: &Path) -> color_eyre::Result<DoingFile> {
 
     let project_regex = Regex::new(r"^(.+):$")?;
     // Updated regex to match: - YYYY-MM-DD HH:MM | description <uuid>
-    let task_regex = Regex::new(r"^ - (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) \| (.+?) <([a-f0-9]{32})>$")?;
+    let task_regex = Regex::new(r"^ - (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) \| (.+?) <([a-f0-9-]{36})>$")?;
     let tag_regex = Regex::new(r"@(\w+)(?:\(([^)]+)\))?")?;
 
     for line in content.lines() {
@@ -113,12 +113,12 @@ mod tests {
     fn test_parse_taskpaper_content() {
         let mut temp_file = NamedTempFile::new().unwrap();
         writeln!(temp_file, "Currently:").unwrap();
-        writeln!(temp_file, " - 2025-07-28 16:24 | Working on parser @in_progress <7a1185c6024152ac077183f31c40acdd>").unwrap();
+        writeln!(temp_file, " - 2025-07-28 16:24 | Working on parser @in_progress <7a1185c6-0241-52ac-0771-83f31c40acdd>").unwrap();
         writeln!(temp_file, "  This is a note").unwrap();
-        writeln!(temp_file, " - 2025-07-28 12:28 | Completed task @done(2025-07-28 13:58) <e520e7753401241cb8d2ef3ad6ba3fa7>").unwrap();
+        writeln!(temp_file, " - 2025-07-28 12:28 | Completed task @done(2025-07-28 13:58) <e520e775-3401-241c-b8d2-ef3ad6ba3fa7>").unwrap();
         writeln!(temp_file, "").unwrap();
         writeln!(temp_file, "Archive:").unwrap();
-        writeln!(temp_file, " - 2025-07-28 09:37 | Archived task @priority(high) <ff20b760b698fe0bd7a800213cb6cc3f>").unwrap();
+        writeln!(temp_file, " - 2025-07-28 09:37 | Archived task @priority(high) <ff20b760-b698-fe0b-d7a8-00213cb6cc3f>").unwrap();
 
         let result = parse_taskpaper(temp_file.path()).unwrap();
 

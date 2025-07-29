@@ -20,8 +20,6 @@ pub struct App {
     entries: Vec<Entry>,
     /// Selected entry index
     selected: usize,
-    /// Current section filter
-    section_filter: Option<String>,
     /// Error message to display
     error: Option<String>,
     /// Show detailed view of selected entry
@@ -35,7 +33,6 @@ impl App {
             running: false,
             entries: Vec::new(),
             selected: 0,
-            section_filter: None,
             error: None,
             show_detail: false,
         };

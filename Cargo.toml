@@ -6,6 +6,14 @@ authors = ["Eduardo Díaz <ediaz@dcc8090.cl>"]
 license = "MIT"
 edition = "2024"
 
+[lib]
+name = "daily_log"
+path = "src/lib.rs"
+
+[[bin]]
+name = "daily-log"
+path = "src/main.rs"
+
 [dependencies]
 crossterm = "0.28.1"
 ratatui = "0.29.0"
