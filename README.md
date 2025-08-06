@@ -51,22 +51,22 @@ cargo install --path .
 
 ```bash
 # Add a new entry (what you're doing now)
-doing now "Writing documentation"
+daily-log now "Writing documentation"
 
 # Add entry with tags
-doing now "Fixing bug in parser @bug @urgent"
+daily-log now "Fixing bug in parser @bug @urgent"
 
 # Show recent entries
-doing recent
+daily-log recent
 
 # Show today's entries
-doing today
+daily-log today
 
 # Mark last entry as done
-doing done
+daily-log done
 
 # Add a completed entry
-doing done "Deployed to production @deploy"
+daily-log done "Deployed to production @deploy"
 ```
 
 ### Core Commands
@@ -75,99 +75,99 @@ doing done "Deployed to production @deploy"
 
 ```bash
 # Simple entry
-doing now "Working on feature X"
+daily-log now "Working on feature X"
 
 # With tags
-doing now "Code review @review @team"
+daily-log now "Code review @review @team"
 
 # With note (using parentheses)
-doing now "Meeting (discuss roadmap with team)"
+daily-log now "Meeting (discuss roadmap with team)"
 
 # Backdate an entry
-doing now "Lunch break" --back "30 minutes ago"
+daily-log now "Lunch break" --back "30 minutes ago"
 
 # Add to specific section
-doing now "Project task" -s Projects
+daily-log now "Project task" -s Projects
 
 # Finish previous task and start new one
-doing now "New task" -f
+daily-log now "New task" -f
 
 # Interactive mode (prompts for entry)
-doing now
+daily-log now
 ```
 
 #### `done` / `did` - Mark tasks as completed
 
 ```bash
 # Mark last entry as done
-doing done
+daily-log done
 
 # Add a new completed entry
-doing done "Finished report"
+daily-log done "Finished report"
 
 # Mark last entry done at specific time
-doing done --at "2 hours ago"
+daily-log done --at "2 hours ago"
 
 # Specify duration
-doing done --took 45m
+daily-log done --took 45m
 
 # Archive completed entry
-doing done --archive
+daily-log done --archive
 ```
 
 #### `recent` - Show recent entries
 
 ```bash
 # Show last 10 entries (default)
-doing recent
+daily-log recent
 
 # Show last 20 entries
-doing recent 20
+daily-log recent 20
 
 # Show entries from specific section
-doing recent -s Projects
+daily-log recent -s Projects
 ```
 
 #### `today` - Show today's entries
 
 ```bash
 # Show all of today's entries
-doing today
+daily-log today
 
 # Show only from specific section
-doing today -s Work
+daily-log today -s Work
 ```
 
 #### `delete` - Remove entries
 
 ```bash
 # Delete last entry (with confirmation)
-doing delete
+daily-log delete
 
 # Delete last 3 entries
-doing delete 3
+daily-log delete 3
 
 # Force delete without confirmation
-doing delete --force
+daily-log delete --force
 
 # Delete entries matching search
-doing delete --search "temp" --force
+daily-log delete --search "temp" --force
 
 # Delete entries with specific tag
-doing delete --tag "cancelled" --force
+daily-log delete --tag "cancelled" --force
 ```
 
 #### `again` / `resume` - Repeat the last entry
 
 ```bash
 # Create a new entry with same description as last
-doing again
+daily-log again
 
 # Resume with a different note
-doing again --note "continuation of morning work"
+daily-log again --note "continuation of morning work"
 
 # Resume in different section
-doing again --in Projects
+daily-log again --in Projects
 ```
 
 ### Organization Commands
@@ -176,29 +176,29 @@ doing again --in Projects
 
 ```bash
 # List all sections
-doing sections
+daily-log sections
 
 # Add a new section
-doing sections -a "Personal"
+daily-log sections -a "Personal"
 
 # Remove a section (moves entries to Archive)
-doing sections -r "OldProjects"
+daily-log sections -r "OldProjects"
 ```
 
 #### `archive` - Move entries between sections
 
 ```bash
 # Archive all done entries from Currently
-doing archive
+daily-log archive
 
 # Archive entries with specific tag
-doing archive @completed --to Done
+daily-log archive @completed --to Done
 
 # Archive entries older than a date
-doing archive --before "last week"
+daily-log archive --before "last week"
 
 # Archive from specific section
-doing archive Projects --to "Archived Projects"
+daily-log archive Projects --to "Archived Projects"
 ```
 
 ### Search and Filter Commands
@@ -207,48 +207,48 @@ doing archive Projects --to "Archived Projects"
 
 ```bash
 # Search for text
-doing grep "bug fix"
+daily-log grep "bug fix"
 
 # Case-insensitive search
-doing search -i "meeting"
+daily-log search -i "meeting"
 
 # Search with regex
-doing grep "/deploy.*production/"
+daily-log grep "/deploy.*production/"
 
 # Search in specific sections
-doing grep "feature" --section Development
+daily-log grep "feature" --section Development
 ```
 
 #### `show` - Display entries with filters
 
 ```bash
 # Show all entries
-doing show all
+daily-log show all
 
 # Show entries from date range
-doing show all --from "last monday" --to "yesterday"
+daily-log show all --from "last monday" --to "yesterday"
 
 # Show only entries with specific tags
-doing show all --tag "important"
+daily-log show all --tag "important"
 
 # Show with duration totals
-doing show all --totals
+daily-log show all --totals
 ```
 
 #### `tags` - List all tags
 
 ```bash
 # List all tags
-doing tags
+daily-log tags
 
 # Show tag counts
-doing tags --counts
+daily-log tags --counts
 
 # Sort by count
-doing tags --counts --sort count
+daily-log tags --counts --sort count
 
 # Show tags from specific section
-doing tags -s Projects
+daily-log tags -s Projects
 ```
 
 ### Advanced Usage
@@ -257,39 +257,39 @@ doing tags -s Projects
 
 ```bash
 # Relative times
-doing now "Task" --back "2 hours ago"
-doing now "Task" --back "yesterday at 3pm"
-doing done --at "30 minutes ago"
+daily-log now "Task" --back "2 hours ago"
+daily-log now "Task" --back "yesterday at 3pm"
+daily-log done --at "30 minutes ago"
 
 # Date ranges
-doing now "Long task" --from "9am to 5pm"
-doing show all --from "last monday" --to "today"
+daily-log now "Long task" --from "9am to 5pm"
+daily-log show all --from "last monday" --to "today"
 ```
 
 #### Tag Syntax
 
 ```bash
 # Simple tags
-doing now "Task @urgent @bug"
+daily-log now "Task @urgent @bug"
 
 # Tags with values
-doing now "Deploy @version(2.1.0) @environment(staging)"
+daily-log now "Deploy @version(2.1.0) @environment(staging)"
 
 # Automatic tag extraction
-doing done "Fix @bug(ID-123) in @module(auth)"
+daily-log done "Fix @bug(ID-123) in @module(auth)"
 ```
 
 #### Notes
 
 ```bash
 # Parenthetical notes (extracted from description)
-doing now "Meeting (with client about new features)"
+daily-log now "Meeting (with client about new features)"
 
 # Note flag
-doing now "Development work" --note "Refactoring auth module"
+daily-log now "Development work" --note "Refactoring auth module"
 
 # Multi-line notes (interactive)
-doing now "Research" --ask
+daily-log now "Research" --ask
 ```
 
 ### Terminal UI
@@ -297,9 +297,9 @@ doing now "Research" --ask
 Launch the interactive terminal interface:
 
 ```bash
-doing tui
+daily-log tui
 # or just
-doing t
+daily-log t
 ```
 
 **TUI Controls:**
@@ -361,4 +361,3 @@ Copyright (c) Eduardo Díaz
 This project is licensed under the MIT license ([LICENSE] or <http://opensource.org/licenses/MIT>)
 
 [LICENSE]: ./LICENSE
-
