@@ -4,6 +4,7 @@ pub mod commands;
 pub mod display;
 pub mod filtering;
 pub mod models;
+pub mod services;
 pub mod storage;
 
 #[cfg(test)]

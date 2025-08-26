@@ -7,8 +7,9 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
 };
-use crate::storage::{Config, parse_taskpaper, save_taskpaper};
+use crate::storage::{Config, parse_taskpaper};
 use crate::models::Entry;
+use crate::services::EntryService;
 use chrono::{Local, Duration, TimeZone};
 
 /// The main application which holds the state and logic of the application.
@@ -353,6 +354,12 @@ impl App {
                     self.delete_entry();
                 }
             }
+            (_, KeyCode::Char(' ')) => {
+                // Toggle @done status
+                if self.selected < self.entries.len() {
+                    self.toggle_done();
+                }
+            }
             _ => {}
         }
     }
@@ -365,41 +372,35 @@ impl App {
     /// Delete the selected entry
     fn delete_entry(&mut self) {
         if let Some(entry) = self.entries.get(self.selected) {
-            // Use the delete command logic
-            let config = crate::storage::Config::load();
-            let doing_file_path = config.doing_file_path();
-            
-            match crate::storage::parse_taskpaper(&doing_file_path) {
-                Ok(mut doing_file) => {
-                    // Find and remove the entry
-                    let mut deleted = false;
-                    for (_section_name, entries) in doing_file.sections.iter_mut() {
-                        let initial_len = entries.len();
-                        entries.retain(|e| e.uuid != entry.uuid);
-                        if entries.len() < initial_len {
-                            deleted = true;
-                            break;
-                        }
+            // Use the service layer to delete the entry
+            match EntryService::delete_by_uuid(&entry.uuid) {
+                Ok(()) => {
+                    // Remove from UI and adjust selection
+                    self.entries.remove(self.selected);
+                    if self.selected >= self.entries.len() && !self.entries.is_empty() {
+                        self.selected = self.entries.len() - 1;
                     }
-                    
-                    if deleted {
-                        // Save the file
-                        if let Err(e) = save_taskpaper(&doing_file) {
-                            self.error = Some(format!("Failed to save after deletion: {e}"));
-                        } else {
-                            // Remove from UI and adjust selection
-                            self.entries.remove(self.selected);
-                            if self.selected >= self.entries.len() && !self.entries.is_empty() {
-                                self.selected = self.entries.len() - 1;
-                            }
-                            self.error = None;
-                        }
-                    } else {
-                        self.error = Some("Entry not found in file".to_string());
-                    }
+                    self.error = None;
                 }
                 Err(e) => {
-                    self.error = Some(format!("Failed to load file for deletion: {e}"));
+                    self.error = Some(format!("Failed to delete entry: {e}"));
+                }
+            }
+        }
+    }
+    
+    /// Toggle the @done status of the selected entry
+    fn toggle_done(&mut self) {
+        if let Some(entry) = self.entries.get(self.selected) {
+            // Use the service layer to toggle the done status
+            match EntryService::toggle_done_by_uuid(&entry.uuid) {
+                Ok(updated_entry) => {
+                    // Update the entry in the UI
+                    self.entries[self.selected] = updated_entry;
+                    self.error = None;
+                }
+                Err(e) => {
+                    self.error = Some(format!("Failed to toggle done status: {e}"));
                 }
             }
         }

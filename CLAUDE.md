@@ -11,6 +11,7 @@ Brett Terpstra's "doing" is a comprehensive time tracking tool with over 30 comm
 ### Currently Implemented Features
 
 **Core Commands:**
+
 - `now` - Add entries with full feature set:
   - Interactive mode (run without arguments)
   - Parenthetical notes: `doing now "Task (this becomes a note)"`
@@ -25,7 +26,8 @@ Brett Terpstra's "doing" is a comprehensive time tracking tool with over 30 comm
 - `last` - Show most recent entry with time ago
 
 **Other Features:**
-- Store data in doing's exact format: ` - YYYY-MM-DD HH:MM | description @tags <uuid>`
+
+- Store data in doing's exact format: `- YYYY-MM-DD HH:MM | description @tags <uuid>`
 - Each entry has a unique UUID identifier
 - Support for tags with values (@tag or @tag(value))
 - Support for notes on entries (indented with 2 spaces)
@@ -33,9 +35,11 @@ Brett Terpstra's "doing" is a comprehensive time tracking tool with over 30 comm
 - Default behavior: no args shows recent, any text creates new entry
 
 ### Features from Original "doing" (To Be Implemented)
+
 The original doing tool includes 30+ commands:
 
 **Entry Management:**
+
 - `done, did` - Add a completed item with @done(date). No argument finishes last entry
 - `finish` - Mark last X entries as @done
 - `again, resume` - Repeat last entry as new entry
@@ -44,6 +48,7 @@ The original doing tool includes 30+ commands:
 - `update` - Update doing to the latest version
 
 **Viewing & Searching:**
+
 - `show` - List all entries (with advanced filtering)
 - `grep, search` - Search for entries
 - `on` - List entries for a date
@@ -53,6 +58,7 @@ The original doing tool includes 30+ commands:
 - `views` - List available custom views
 
 **Organization:**
+
 - `archive, move` - Move entries between sections
 - `rotate` - Move entries to archive file
 - `sections` - List, add, or remove sections in the Doing file
@@ -60,6 +66,7 @@ The original doing tool includes 30+ commands:
 - `tag_dir` - Set the default tags for the current directory
 
 **Editing & Annotation:**
+
 - `note` - Add a note to the last entry
 - `tag` - Add tag(s) to last entry
 - `mark, flag` - Mark last entry as flagged
@@ -67,6 +74,7 @@ The original doing tool includes 30+ commands:
 - `select` - Display an interactive menu to perform operations
 
 **Advanced Features:**
+
 - `import` - Import entries from an external source
 - `template` - Output HTML, CSS, and Markdown (ERB) templates for customization
 - `colors` - List available color variables for configuration templates and views
@@ -80,6 +88,7 @@ The original doing tool includes 30+ commands:
 - `changes, changelog` - List recent changes in Doing
 
 **Global Options:**
+
 - Color output control
 - Custom config file
 - Debug/verbose output
@@ -90,16 +99,19 @@ The original doing tool includes 30+ commands:
 
 ## Architecture
 
-### Current Structure
-- `src/main.rs`: Entry point that initializes the terminal and runs the app
-- `src/app.rs`: Contains the `App` struct which manages application state and UI rendering
+### Principles
 
-### Planned Structure
+- DRY: Don't Repeat Yourself, always try to encapsulate operations
+- **Separation of Concerns**: Business logic is separated from UI concerns using a Service Layer pattern
+- Commands module handles CLI operations
+- Services module handles business logic that can be shared between CLI and TUI
+- TUI acts as a controller that delegates operations to the service layer
+
+### Current Structure
+
 - `src/main.rs`: Entry point with CLI argument parsing (clap)
-- `src/cli.rs`: CLI command definitions and handlers
-- `src/tui/`: Terminal UI module
-  - `app.rs`: TUI application state and rendering
-  - `widgets.rs`: Custom widgets for displaying entries
+- `src/app.rs`: TUI application - handles UI state and rendering, delegates business logic to services
+- `src/cli.rs`: CLI command definitions and routing
 - `src/models/`: Core data structures
   - `entry.rs`: Work entry structure with timestamp, description, tags
   - `section.rs`: Section/category management
@@ -107,12 +119,17 @@ The original doing tool includes 30+ commands:
 - `src/storage/`: File persistence
   - `taskpaper.rs`: TaskPaper format parser/writer
   - `config.rs`: Configuration management
-- `src/commands/`: Command implementations
-  - `now.rs`, `later.rs`, `recent.rs`, `today.rs`, `last.rs`
+- `src/services/`: Business logic layer (Service Layer Pattern)
+  - `entry_service.rs`: Entry operations (toggle done, delete, fetch) by UUID
+- `src/commands/`: CLI command implementations
+  - Various command handlers (`now.rs`, `done.rs`, `recent.rs`, etc.)
+
+###
 
 ## Development Commands
 
 ### Build and Run
+
 ```bash
 # Check if code compiles
 cargo check
@@ -128,6 +145,7 @@ cargo run --release
 ```
 
 ### Code Quality
+
 ```bash
 # Run clippy for lint checks
 cargo clippy
@@ -145,6 +163,7 @@ cargo test test_name
 ## Key Dependencies
 
 ### Current
+
 - **ratatui** (0.29.0): Terminal UI framework
 - **crossterm** (0.28.1): Cross-platform terminal manipulation
 - **color-eyre** (0.6.3): Enhanced error handling and reporting
@@ -167,11 +186,11 @@ cargo test test_name
 
 ### ✅ Completed Phases
 
-1. **Phase 1: Core Data Structures** 
+1. **Phase 1: Core Data Structures**
    - ✅ Entry struct with timestamp, description, tags, section, UUID
    - ✅ Section support for categories (Currently, Archive, custom)
    - ✅ DoingFile struct representing the entire file
-   - ✅ TaskPaper format: ` - YYYY-MM-DD HH:MM | description @tags <uuid>`
+   - ✅ TaskPaper format: `- YYYY-MM-DD HH:MM | description @tags <uuid>`
 
 2. **Phase 2: CLI Framework**
    - ✅ Clap integration with subcommands
@@ -321,12 +340,14 @@ cargo test test_name
 ## TaskPaper Format Notes
 
 TaskPaper format basics:
+
 - Projects end with a colon (:)
 - Tasks start with a dash (-)
 - Tags are @tag or @tag(value)
 - Notes are indented lines without markers
 
 Example:
+
 ```
 Currently:
 - 2025-07-28 20:41 | Meeting with client @flagged @importance(high) @done(2025-07-28 20:40) <17b6ef06cdab4396baf5ffb1786a0634>
@@ -340,6 +361,7 @@ Archive:
 ## Usage Examples
 
 ### Basic Usage
+
 ```bash
 # Add a new entry interactively
 daily-log now
@@ -383,6 +405,7 @@ daily-log Fix bug in login system     # Same as: daily-log now "Fix bug in login
 ```
 
 ### Completion & Time Tracking
+
 ```bash
 # Mark entries as done
 daily-log done              # Mark last entry as done with current time
@@ -405,6 +428,7 @@ daily-log cancel --tag abandoned  # Cancel entries with @abandoned tag
 ```
 
 ### Entry Management
+
 ```bash
 # Repeat/Resume entries
 daily-log again             # Duplicate the most recent entry
@@ -450,6 +474,7 @@ daily-log delete --tag done # Delete entries with @done tag
 ```
 
 ## Future Command Examples (Not Yet Implemented)
+
 ```bash
 # Advanced viewing
 daily-log show              # List all entries with filtering
@@ -490,6 +515,7 @@ daily-log import data.csv   # Import entries from file
 **IMPORTANT: All new commands MUST include comprehensive unit tests**
 
 When implementing a new command:
+
 1. Create a test module in `src/commands/tests/{command}_tests.rs`
 2. Add tests covering:
    - Basic functionality (happy path)
@@ -501,6 +527,7 @@ When implementing a new command:
 4. Run `cargo test` to verify all tests pass before marking a phase complete
 
 Example test structure:
+
 ```rust
 #[cfg(test)]
 mod tests {
@@ -532,6 +559,7 @@ mod tests {
 ### Command Implementation Checklist
 
 When adding a new command:
+
 - [ ] Add CLI definition in `src/cli.rs`
 - [ ] Create command handler in `src/commands/{command}.rs`
 - [ ] Add to `src/commands/mod.rs` exports
@@ -540,3 +568,4 @@ When adding a new command:
 - [ ] Test manually with various inputs
 - [ ] Update CLAUDE.md documentation
 - [ ] Ensure `cargo build` and `cargo test` pass without warnings
+
