@@ -8,6 +8,37 @@ This is a Rust clone of Brett Terpstra's "doing" CLI tool - a command-line appli
 
 Brett Terpstra's "doing" is a comprehensive time tracking tool with over 30 commands for tracking status, recording time, and analyzing results. It stores data in TaskPaper-formatted text files and supports multiple sections/categories with flexible output formatting.
 
+## Versioning Strategy
+
+This project follows [Pragmatic Versioning](https://pragmaticversioning.com/) instead of Semantic Versioning. We use the format **BIGRELEASE.ANNOUNCE.INCREMENT**:
+
+- **BIGRELEASE**: A "brand" number for major milestones or periodic releases
+  - `0.x.x` - Pre-stable development phase
+  - `1.x.x` - Stable release series
+  - `2.x.x` - Next major iteration (if needed)
+
+- **ANNOUNCE**: Indicates substantial changes or new features
+  - Incremented when adding significant functionality
+  - Breaking changes or major feature additions
+  - UI/UX improvements or architectural changes
+
+- **INCREMENT**: Automatically incremented for every project contribution
+  - Bug fixes, small features, documentation updates
+  - Any merged pull request should increment this number
+  - Refactoring, dependency updates, test improvements
+
+### Why Pragmatic Versioning?
+
+1. **Simpler for CLI tools**: Users care more about stability and feature completeness than API compatibility
+2. **Clearer development phases**: 0.x clearly indicates "still in development"
+3. **Easier maintenance**: No need to analyze every change for breaking compatibility
+4. **Better communication**: BIGRELEASE acts as a quality/stability indicator
+
+### Current Version Status
+
+- **0.1.0**: Initial development release with core functionality
+- **Path to 1.0.0**: When daily-log reaches feature parity with essential "doing" commands and is considered stable for daily use
+
 ### Currently Implemented Features
 
 **Core Commands:**

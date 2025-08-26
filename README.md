@@ -1,6 +1,8 @@
 # daily-log
 
-A command-line time tracking tool written in Rust, inspired by Brett Terpstra's ["doing"](https://github.com/ttscoff/doing). Track what you're working on and what you've done with a simple, text-based system.
+A fast, simple command-line time tracking tool written in Rust. Track what you're working on and what you've done with an intuitive text-based system.
+
+Inspired by Brett Terpstra's ["doing"](https://github.com/ttscoff/doing) but built from the ground up in Rust for speed and reliability.
 
 ## About
 
@@ -36,13 +38,18 @@ This project started as a Rust clone of Brett Terpstra's excellent [doing](https
 
 ## Installation
 
+### From Source
+
 ```bash
-# Clone the repository
 git clone https://github.com/lnds/daily-log.git
 cd daily-log
-
-# Build and install
 cargo install --path .
+```
+
+### Check Installation
+
+```bash
+daily-log --version
 ```
 
 ## Usage
@@ -347,6 +354,16 @@ Additional commands from the original "doing" tool that may be implemented:
 - `import` - Import from other time tracking tools
 - `config` - Configuration management
 - Templates and reports
+
+## Contributing
+
+We welcome contributions! Please see [DEVELOPMENT.md](./DEVELOPMENT.md) for:
+
+- Development environment setup
+- Project architecture overview
+- Testing guidelines
+- Code style standards
+- Pull request process
 
 ## Acknowledgments
 

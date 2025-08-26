@@ -1,8 +1,9 @@
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]
-#[command(name = "doing")]
+#[command(name = "daily-log")]
 #[command(about = "A command line tool for tracking what you're doing", long_about = None)]
+#[command(version = env!("CARGO_PKG_VERSION"))]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Commands>,
