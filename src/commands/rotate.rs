@@ -1,10 +1,10 @@
-use crate::storage::{Config, parse_taskpaper, save_taskpaper, DoingFile};
+use crate::storage::{Config, DoingFile, parse_taskpaper, save_taskpaper};
 use chrono::Local;
 use color_eyre::Result;
 use regex::Regex;
-use std::path::{Path, PathBuf};
-use std::fs;
 use std::collections::HashMap;
+use std::fs;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug)]
 pub struct RotateOptions {
@@ -37,15 +37,17 @@ pub fn handle_rotate(opts: RotateOptions) -> Result<()> {
 
     // Ensure Archive section exists in archive file
     if !archive_file.sections.contains_key("Archive") {
-        archive_file.sections.insert("Archive".to_string(), Vec::new());
+        archive_file
+            .sections
+            .insert("Archive".to_string(), Vec::new());
     }
 
     let mut entries_to_rotate = Vec::new();
 
     // Parse before date
-    let before_date = opts.before.as_ref().and_then(|s| chrono_english::parse_date_string(
-        s, Local::now(), chrono_english::Dialect::Us
-    ).ok());
+    let before_date = opts.before.as_ref().and_then(|s| {
+        chrono_english::parse_date_string(s, Local::now(), chrono_english::Dialect::Us).ok()
+    });
 
     // Compile search patterns
     let search_regex = if let Some(ref pattern) = opts.search {
@@ -97,8 +99,9 @@ pub fn handle_rotate(opts: RotateOptions) -> Result<()> {
 
                 // Apply search filter
                 if let Some(ref regex) = search_regex {
-                    if !regex.is_match(&entry.description) && 
-                       !entry.note.as_ref().is_some_and(|n| regex.is_match(n)) {
+                    if !regex.is_match(&entry.description)
+                        && !entry.note.as_ref().is_some_and(|n| regex.is_match(n))
+                    {
                         matches = false;
                     }
                 }
@@ -156,13 +159,15 @@ pub fn handle_rotate(opts: RotateOptions) -> Result<()> {
         if let Some(entries) = doing_file.sections.get_mut(&section_name) {
             if index < entries.len() {
                 let entry = entries.remove(index);
-                
+
                 // Add section tag if not from Archive
                 let mut entry_to_archive = entry.clone();
                 if section_name != "Archive" {
-                    entry_to_archive.tags.insert(format!("from_{}", section_name.to_lowercase()), None);
+                    entry_to_archive
+                        .tags
+                        .insert(format!("from_{}", section_name.to_lowercase()), None);
                 }
-                
+
                 rotated_entries.push(entry_to_archive);
                 rotated_count += 1;
             }
@@ -181,10 +186,15 @@ pub fn handle_rotate(opts: RotateOptions) -> Result<()> {
         // Save both files
         save_taskpaper(&doing_file)?;
         save_taskpaper_to_path(&archive_file, &archive_path)?;
-        
-        println!("Rotated {} {} to {}", 
+
+        println!(
+            "Rotated {} {} to {}",
             rotated_count,
-            if rotated_count == 1 { "entry" } else { "entries" },
+            if rotated_count == 1 {
+                "entry"
+            } else {
+                "entries"
+            },
             archive_path.display()
         );
     } else {
@@ -195,12 +205,13 @@ pub fn handle_rotate(opts: RotateOptions) -> Result<()> {
 }
 
 fn get_archive_path(doing_file_path: &Path) -> PathBuf {
-    let file_stem = doing_file_path.file_stem()
+    let file_stem = doing_file_path
+        .file_stem()
         .and_then(|s| s.to_str())
         .unwrap_or("doing");
-    
+
     let archive_name = format!("{file_stem}_archive.taskpaper");
-    
+
     if let Some(parent) = doing_file_path.parent() {
         parent.join(archive_name)
     } else {
@@ -222,7 +233,7 @@ fn compile_search_regex(pattern: &str, case: &str, exact: bool) -> Result<Regex>
     };
 
     let case_insensitive = parse_smart_case(case, &pattern);
-    
+
     let regex = if case_insensitive {
         Regex::new(&format!("(?i){pattern}"))?
     } else {
@@ -254,7 +265,7 @@ fn parse_smart_case(case: &str, pattern: &str) -> bool {
 
 fn compile_tag_value_queries(val: &[String]) -> Result<HashMap<String, Regex>> {
     let mut queries = HashMap::new();
-    
+
     for query in val {
         // Parse tag value queries in format "tag_name=pattern"
         if let Some(eq_pos) = query.find('=') {
@@ -264,6 +275,6 @@ fn compile_tag_value_queries(val: &[String]) -> Result<HashMap<String, Regex>> {
             queries.insert(tag_name, regex);
         }
     }
-    
+
     Ok(queries)
 }

@@ -1,7 +1,7 @@
 use crate::models::Entry;
 use crate::storage::{Config, parse_taskpaper, save_taskpaper};
 use chrono::Local;
-use chrono_english::{parse_date_string, Dialect};
+use chrono_english::{Dialect, parse_date_string};
 use regex::Regex;
 use std::io;
 
@@ -26,7 +26,9 @@ pub struct AgainOptions {
 
 pub fn handle_again(opts: AgainOptions) -> color_eyre::Result<()> {
     if opts.interactive {
-        return Err(color_eyre::eyre::eyre!("Interactive mode not yet implemented"));
+        return Err(color_eyre::eyre::eyre!(
+            "Interactive mode not yet implemented"
+        ));
     }
 
     if opts.editor {
@@ -35,9 +37,9 @@ pub fn handle_again(opts: AgainOptions) -> color_eyre::Result<()> {
 
     let config = Config::load();
     let doing_file_path = config.doing_file_path();
-    
+
     let mut doing_file = parse_taskpaper(&doing_file_path)?;
-    
+
     // Find the entry to duplicate
     let entry_to_duplicate = find_entry_to_duplicate(
         &doing_file,
@@ -60,12 +62,14 @@ pub fn handle_again(opts: AgainOptions) -> color_eyre::Result<()> {
     // Create new entry with same description and tags (minus @done)
     let mut new_entry = Entry::new(
         entry_to_duplicate.description.clone(),
-        opts.in_section.clone().unwrap_or_else(|| entry_to_duplicate.section.clone()),
+        opts.in_section
+            .clone()
+            .unwrap_or_else(|| entry_to_duplicate.section.clone()),
     );
-    
+
     // Set the new timestamp
     new_entry.timestamp = new_start_time;
-    
+
     // Copy tags except @done
     for (tag_name, tag_value) in &entry_to_duplicate.tags {
         if tag_name != "done" {
@@ -82,11 +86,11 @@ pub fn handle_again(opts: AgainOptions) -> color_eyre::Result<()> {
         let mut lines = Vec::new();
         let stdin = io::stdin();
         let mut empty_line_count = 0;
-        
+
         loop {
             let mut line = String::new();
             stdin.read_line(&mut line)?;
-            
+
             if line.trim().is_empty() {
                 empty_line_count += 1;
                 if empty_line_count >= 2 {
@@ -98,12 +102,12 @@ pub fn handle_again(opts: AgainOptions) -> color_eyre::Result<()> {
                 lines.push(line.trim_end().to_string());
             }
         }
-        
+
         // Remove trailing empty lines
         while lines.last().is_some_and(|l| l.is_empty()) {
             lines.pop();
         }
-        
+
         if !lines.is_empty() {
             new_entry.note = Some(lines.join("\n"));
         }
@@ -126,7 +130,7 @@ pub fn handle_again(opts: AgainOptions) -> color_eyre::Result<()> {
         new_entry.timestamp.format("%Y-%m-%d %H:%M"),
         new_entry.description
     );
-    
+
     if let Some(note_text) = &new_entry.note {
         for line in note_text.lines() {
             println!("  {line}");
@@ -152,7 +156,7 @@ fn find_entry_to_duplicate(
     } else {
         sections.to_vec()
     };
-    
+
     // Collect all entries from target sections
     let mut all_entries: Vec<Entry> = Vec::new();
     for section in &target_sections {
@@ -162,23 +166,23 @@ fn find_entry_to_duplicate(
             }
         }
     }
-    
+
     // Sort by timestamp (newest first)
     all_entries.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
-    
+
     // Apply filters
     let mut filtered_entries = all_entries;
-    
+
     // Apply search filter
     if let Some(search_query) = search {
         filtered_entries = filter_by_search(filtered_entries, search_query, exact, case)?;
     }
-    
+
     // Apply tag filter
     if let Some(tag_query) = tag {
         filtered_entries = filter_by_tag(filtered_entries, tag_query)?;
     }
-    
+
     // Apply NOT filter if specified
     if not {
         // Get all entries again
@@ -191,12 +195,13 @@ fn find_entry_to_duplicate(
             }
         }
         all_entries_again.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
-        
-        filtered_entries = all_entries_again.into_iter()
+
+        filtered_entries = all_entries_again
+            .into_iter()
             .filter(|entry| !filtered_entries.iter().any(|e| e.uuid == entry.uuid))
             .collect();
     }
-    
+
     // Get the most recent entry after filtering
     filtered_entries
         .into_iter()
@@ -223,18 +228,20 @@ fn filter_by_search(
 
     let filtered = if search_query.starts_with('/') && search_query.ends_with('/') {
         // Regex search
-        let pattern = &search_query[1..search_query.len()-1];
+        let pattern = &search_query[1..search_query.len() - 1];
         let regex = if case_sensitive {
             Regex::new(pattern)?
         } else {
             Regex::new(&format!("(?i){pattern}"))?
         };
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|entry| regex.is_match(&entry.description))
             .collect()
     } else if let Some(query) = search_query.strip_prefix('\'') {
         // Exact match
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|entry| {
                 if case_sensitive {
                     entry.description == query
@@ -245,28 +252,36 @@ fn filter_by_search(
             .collect()
     } else if exact {
         // Exact substring match
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|entry| {
                 if case_sensitive {
                     entry.description.contains(search_query)
                 } else {
-                    entry.description.to_lowercase().contains(&search_query.to_lowercase())
+                    entry
+                        .description
+                        .to_lowercase()
+                        .contains(&search_query.to_lowercase())
                 }
             })
             .collect()
     } else {
         // Regular substring matching
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|entry| {
                 if case_sensitive {
                     entry.description.contains(search_query)
                 } else {
-                    entry.description.to_lowercase().contains(&search_query.to_lowercase())
+                    entry
+                        .description
+                        .to_lowercase()
+                        .contains(&search_query.to_lowercase())
                 }
             })
             .collect()
     };
-    
+
     Ok(filtered)
 }
 
@@ -275,8 +290,9 @@ fn filter_by_tag(
     tag_query: &str,
 ) -> Result<Vec<Entry>, color_eyre::eyre::Error> {
     let tags: Vec<&str> = tag_query.split(',').map(|s| s.trim()).collect();
-    
-    let filtered = entries.into_iter()
+
+    let filtered = entries
+        .into_iter()
         .filter(|entry| {
             // Check if entry has any of the requested tags
             for tag in &tags {
@@ -297,6 +313,6 @@ fn filter_by_tag(
             false
         })
         .collect();
-    
+
     Ok(filtered)
 }

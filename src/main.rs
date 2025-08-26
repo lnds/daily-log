@@ -1,7 +1,7 @@
+use clap::Parser;
 use daily_log::app::App;
 use daily_log::cli::{Cli, Commands};
 use daily_log::commands;
-use clap::Parser;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
@@ -9,26 +9,26 @@ fn main() -> color_eyre::Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Some(Commands::Now { 
-            entry, 
-            note, 
-            back, 
-            section, 
-            finish_last, 
-            from, 
-            editor, 
-            ask, 
-            noauto 
+        Some(Commands::Now {
+            entry,
+            note,
+            back,
+            section,
+            finish_last,
+            from,
+            editor,
+            ask,
+            noauto,
         }) => {
             commands::handle_now(commands::NowOptions {
-                entry, 
-                note, 
-                back, 
-                section, 
-                finish_last, 
-                from, 
-                editor, 
-                ask, 
+                entry,
+                note,
+                back,
+                section,
+                finish_last,
+                from,
+                editor,
+                ask,
                 _noauto: noauto,
             })?;
         }
@@ -926,14 +926,14 @@ fn main() -> color_eyre::Result<()> {
             // If no command but task words provided, treat as "now" command
             if !cli.task.is_empty() {
                 commands::handle_now(commands::NowOptions {
-                    entry: cli.task, 
-                    note: None, 
-                    back: None, 
-                    section: None, 
-                    finish_last: false, 
-                    from: None, 
-                    editor: false, 
-                    ask: false, 
+                    entry: cli.task,
+                    note: None,
+                    back: None,
+                    section: None,
+                    finish_last: false,
+                    from: None,
+                    editor: false,
+                    ask: false,
                     _noauto: false,
                 })?;
             } else {

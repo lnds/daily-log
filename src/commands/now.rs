@@ -1,7 +1,7 @@
 use crate::models::Entry;
 use crate::storage::{Config, parse_taskpaper, save_taskpaper};
-use chrono::{Local, DateTime};
-use chrono_english::{parse_date_string, Dialect};
+use chrono::{DateTime, Local};
+use chrono_english::{Dialect, parse_date_string};
 use regex::Regex;
 use std::io::{self, Write};
 
@@ -21,20 +21,21 @@ pub struct NowOptions {
 pub fn handle_now(opts: NowOptions) -> color_eyre::Result<()> {
     let config = Config::load();
     let doing_file_path = config.doing_file_path();
-    
+
     let mut doing_file = parse_taskpaper(&doing_file_path)?;
-    
+
     // Handle finish_last option - mark last entry as done
     if opts.finish_last {
         let target_section = opts.section.as_deref().unwrap_or("Currently");
-        
+
         // Find the last undone entry in the section
-        let last_entry_info = doing_file.get_all_entries()
+        let last_entry_info = doing_file
+            .get_all_entries()
             .into_iter()
             .filter(|e| e.section == target_section && !e.is_done())
             .max_by_key(|e| e.timestamp)
             .map(|e| (e.timestamp, e.description.clone()));
-            
+
         if let Some((timestamp, description)) = last_entry_info {
             // Now update the actual entry in the sections
             if let Some(entries) = doing_file.sections.get_mut(target_section) {
@@ -47,12 +48,14 @@ pub fn handle_now(opts: NowOptions) -> color_eyre::Result<()> {
             }
         }
     }
-    
+
     // Get entry text
     let entry_text = if opts.entry.is_empty() {
         if opts.editor {
             // TODO: Implement editor support
-            return Err(color_eyre::eyre::eyre!("Editor support not yet implemented"));
+            return Err(color_eyre::eyre::eyre!(
+                "Editor support not yet implemented"
+            ));
         } else {
             // Interactive prompt
             print!("What are you doing now? ");
@@ -64,19 +67,20 @@ pub fn handle_now(opts: NowOptions) -> color_eyre::Result<()> {
     } else {
         opts.entry.join(" ")
     };
-    
+
     if entry_text.is_empty() {
         return Err(color_eyre::eyre::eyre!("Entry text cannot be empty"));
     }
-    
+
     // Parse parenthetical at end as note
     let paren_regex = Regex::new(r"^(.+?)\s*\(([^)]+)\)\s*$")?;
-    let (final_entry_text, parsed_note) = if let Some(captures) = paren_regex.captures(&entry_text) {
+    let (final_entry_text, parsed_note) = if let Some(captures) = paren_regex.captures(&entry_text)
+    {
         (captures[1].to_string(), Some(captures[2].to_string()))
     } else {
         (entry_text.clone(), None)
     };
-    
+
     // Get final note (command line flag takes precedence)
     let final_note = if let Some(n) = opts.note {
         Some(n)
@@ -89,11 +93,11 @@ pub fn handle_now(opts: NowOptions) -> color_eyre::Result<()> {
         let mut lines = Vec::new();
         let stdin = io::stdin();
         let mut empty_line_count = 0;
-        
+
         loop {
             let mut line = String::new();
             stdin.read_line(&mut line)?;
-            
+
             if line.trim().is_empty() {
                 empty_line_count += 1;
                 if empty_line_count >= 2 {
@@ -105,12 +109,12 @@ pub fn handle_now(opts: NowOptions) -> color_eyre::Result<()> {
                 lines.push(line.trim_end().to_string());
             }
         }
-        
+
         // Remove trailing empty lines
         while lines.last().is_some_and(|l| l.is_empty()) {
             lines.pop();
         }
-        
+
         if !lines.is_empty() {
             Some(lines.join("\n"))
         } else {
@@ -119,10 +123,10 @@ pub fn handle_now(opts: NowOptions) -> color_eyre::Result<()> {
     } else {
         None
     };
-    
+
     // Determine section
     let target_section = opts.section.unwrap_or_else(|| "Currently".to_string());
-    
+
     // Extract tags from entry text first
     let tag_regex = Regex::new(r"@(\w+)(?:\(([^)]+)\))?")?;
     let mut tags = Vec::new();
@@ -131,18 +135,21 @@ pub fn handle_now(opts: NowOptions) -> color_eyre::Result<()> {
         let tag_value = capture.get(2).map(|m| m.as_str().to_string());
         tags.push((tag_name, tag_value));
     }
-    
+
     // Remove tags from description
-    let clean_description = tag_regex.replace_all(&final_entry_text, "").trim().to_string();
-    
+    let clean_description = tag_regex
+        .replace_all(&final_entry_text, "")
+        .trim()
+        .to_string();
+
     // Create entry with clean description
     let mut new_entry = Entry::new(clean_description, target_section);
-    
+
     // Add tags
     for (tag_name, tag_value) in tags {
         new_entry = new_entry.with_tag(tag_name, tag_value);
     }
-    
+
     // Handle backdating
     let entry_time = if let Some(back_str) = opts.back {
         parse_date_string(&back_str, Local::now(), Dialect::Us)
@@ -153,24 +160,27 @@ pub fn handle_now(opts: NowOptions) -> color_eyre::Result<()> {
     } else {
         Local::now()
     };
-    
+
     new_entry = new_entry.with_timestamp(entry_time);
-    
+
     // Add note if present
     if let Some(note_text) = final_note {
         new_entry = new_entry.with_note(note_text);
     }
-    
+
     doing_file.add_entry(new_entry.clone());
     save_taskpaper(&doing_file)?;
-    
-    println!("{}: {}", 
+
+    println!(
+        "{}: {}",
         new_entry.timestamp.format("%Y-%m-%d %H:%M"),
         new_entry.description
     );
-    
+
     if !new_entry.tags.is_empty() {
-        let tags_str: Vec<String> = new_entry.tags.iter()
+        let tags_str: Vec<String> = new_entry
+            .tags
+            .iter()
             .map(|(k, v)| {
                 if let Some(val) = v {
                     format!("@{k}({val})")
@@ -181,37 +191,45 @@ pub fn handle_now(opts: NowOptions) -> color_eyre::Result<()> {
             .collect();
         println!("  {}", tags_str.join(" "));
     }
-    
+
     if let Some(note) = &new_entry.note {
         println!("  Note: {}", note.lines().next().unwrap_or(""));
         for line in note.lines().skip(1) {
             println!("        {line}");
         }
     }
-    
+
     Ok(())
 }
 
-fn parse_from_range(from_str: &str, entry: &mut Entry) -> Result<DateTime<Local>, color_eyre::eyre::Error> {
+fn parse_from_range(
+    from_str: &str,
+    entry: &mut Entry,
+) -> Result<DateTime<Local>, color_eyre::eyre::Error> {
     // Parse "from X to Y" or just "from X"
     let from_regex = Regex::new(r"(?i)from\s+(.+?)(?:\s+to\s+(.+))?$")?;
-    
+
     if let Some(captures) = from_regex.captures(from_str) {
         let start_str = &captures[1];
         let start_time = parse_date_string(start_str, Local::now(), Dialect::Us)
             .map_err(|_| color_eyre::eyre::eyre!("Invalid start time: {}", start_str))?;
-        
+
         if let Some(end_match) = captures.get(2) {
             let end_str = end_match.as_str();
             let end_time = parse_date_string(end_str, start_time, Dialect::Us)
                 .map_err(|_| color_eyre::eyre::eyre!("Invalid end time: {}", end_str))?;
-            
+
             // Add @done tag with end time
-            entry.tags.insert("done".to_string(), Some(end_time.format("%Y-%m-%d %H:%M").to_string()));
+            entry.tags.insert(
+                "done".to_string(),
+                Some(end_time.format("%Y-%m-%d %H:%M").to_string()),
+            );
         }
-        
+
         Ok(start_time)
     } else {
-        Err(color_eyre::eyre::eyre!("Invalid from format. Use: from TIME [to TIME]"))
+        Err(color_eyre::eyre::eyre!(
+            "Invalid from format. Use: from TIME [to TIME]"
+        ))
     }
 }

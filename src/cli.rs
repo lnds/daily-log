@@ -7,7 +7,7 @@ use clap::{Parser, Subcommand};
 pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Commands>,
-    
+
     /// Task description (if provided without subcommand, creates a 'now' entry)
     #[arg(value_name = "TASK", trailing_var_arg = true)]
     pub task: Vec<String>,
@@ -78,7 +78,6 @@ pub enum Commands {
         #[arg(short = 'X', long = "noauto")]
         noauto: bool,
     },
-
 
     /// Show the last entry
     Last,
@@ -1515,7 +1514,12 @@ pub enum Commands {
         not: bool,
         #[arg(long, value_name = "QUERY")]
         search: Option<String>,
-        #[arg(short = 't', long, value_name = "SECTION_NAME", default_value = "Archive")]
+        #[arg(
+            short = 't',
+            long,
+            value_name = "SECTION_NAME",
+            default_value = "Archive"
+        )]
         to: String,
         #[arg(long, value_name = "TAG")]
         tag: Option<String>,

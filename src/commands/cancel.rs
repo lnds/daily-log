@@ -1,4 +1,4 @@
-use crate::commands::finish::{handle_finish, FinishOptions};
+use crate::commands::finish::{FinishOptions, handle_finish};
 
 #[derive(Debug)]
 pub struct CancelOptions {

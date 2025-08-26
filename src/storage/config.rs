@@ -17,7 +17,7 @@ impl Config {
                 }
             }
         }
-        
+
         Self::default()
     }
 

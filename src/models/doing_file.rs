@@ -26,10 +26,7 @@ impl DoingFile {
 
     pub fn add_entry_to_section(&mut self, mut entry: Entry, section: String) {
         entry.section = section.clone();
-        self.sections
-            .entry(section)
-            .or_default()
-            .push(entry);
+        self.sections.entry(section).or_default().push(entry);
     }
 
     pub fn get_entries(&self, section: &str) -> Option<&Vec<Entry>> {
@@ -64,7 +61,7 @@ impl DoingFile {
 
     pub fn to_taskpaper(&self) -> String {
         let mut result = String::new();
-        
+
         // Sort sections to ensure consistent output
         let mut sorted_sections: Vec<(&String, &Vec<Entry>)> = self.sections.iter().collect();
         sorted_sections.sort_by_key(|(name, _)| {
@@ -127,7 +124,10 @@ mod tests {
             "Current task".to_string(),
             "Currently".to_string(),
         ));
-        file.add_entry(Entry::new("Archived task".to_string(), "Archive".to_string()));
+        file.add_entry(Entry::new(
+            "Archived task".to_string(),
+            "Archive".to_string(),
+        ));
 
         let output = file.to_taskpaper();
         assert!(output.contains("Currently:"));

@@ -52,7 +52,7 @@ impl Entry {
     pub fn to_taskpaper(&self) -> String {
         // Build description with inline tags
         let mut desc_with_tags = self.description.clone();
-        
+
         // Add tags to the description
         for (tag, value) in &self.tags {
             desc_with_tags.push_str(&format!(" @{tag}"));
@@ -60,7 +60,7 @@ impl Entry {
                 desc_with_tags.push_str(&format!("({v})"));
             }
         }
-        
+
         // Format: - YYYY-MM-DD HH:MM | description @tags <uuid>
         let mut result = format!(
             " - {} | {} <{}>",
@@ -68,14 +68,14 @@ impl Entry {
             desc_with_tags,
             self.uuid.as_hyphenated()
         );
-        
+
         // Add note with proper indentation (2 spaces)
         if let Some(note) = &self.note {
             for line in note.lines() {
                 result.push_str(&format!("\n  {line}"));
             }
         }
-        
+
         result
     }
 }

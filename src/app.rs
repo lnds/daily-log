@@ -1,3 +1,6 @@
+use crate::models::Entry;
+use crate::services::EntryService;
+use chrono::{Duration, Local, TimeZone};
 use color_eyre::Result;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::{
@@ -8,9 +11,6 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
 };
 use tui_textarea::{Input, TextArea};
-use crate::models::Entry;
-use crate::services::EntryService;
-use chrono::{Local, Duration, TimeZone};
 
 /// Different modes the app can be in
 #[derive(Debug, PartialEq)]
@@ -117,7 +117,11 @@ impl App {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(1)
-            .constraints([Constraint::Length(3), Constraint::Min(0), Constraint::Length(3)])
+            .constraints([
+                Constraint::Length(3),
+                Constraint::Min(0),
+                Constraint::Length(3),
+            ])
             .split(frame.area());
 
         // Title
@@ -127,88 +131,102 @@ impl App {
             "Daily Log - Doing TUI".to_string()
         };
         let title = Paragraph::new(title_text)
-            .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+            .style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )
             .block(Block::default().borders(Borders::ALL));
         frame.render_widget(title, chunks[0]);
 
         // Entries list
-        let items: Vec<ListItem> = self.entries.iter().enumerate().map(|(i, entry)| {
-            let mut lines = vec![];
-            
-            // Main entry line
-            let mut spans = vec![
-                Span::styled(
-                    entry.timestamp.format("%Y-%m-%d %H:%M").to_string(),
-                    Style::default().fg(Color::Yellow),
-                ),
-                Span::raw(" | "),
-                Span::raw(&entry.description),
-            ];
+        let items: Vec<ListItem> = self
+            .entries
+            .iter()
+            .enumerate()
+            .map(|(i, entry)| {
+                let mut lines = vec![];
 
-            // Add tags
-            for (tag, value) in &entry.tags {
+                // Main entry line
+                let mut spans = vec![
+                    Span::styled(
+                        entry.timestamp.format("%Y-%m-%d %H:%M").to_string(),
+                        Style::default().fg(Color::Yellow),
+                    ),
+                    Span::raw(" | "),
+                    Span::raw(&entry.description),
+                ];
+
+                // Add tags
+                for (tag, value) in &entry.tags {
+                    spans.push(Span::raw(" "));
+                    spans.push(Span::styled(
+                        if let Some(v) = value {
+                            format!("@{tag}({v})")
+                        } else {
+                            format!("@{tag}")
+                        },
+                        Style::default().fg(Color::Green),
+                    ));
+                }
+
+                // Add section
                 spans.push(Span::raw(" "));
                 spans.push(Span::styled(
-                    if let Some(v) = value {
-                        format!("@{tag}({v})")
-                    } else {
-                        format!("@{tag}")
-                    },
-                    Style::default().fg(Color::Green),
+                    format!("[{}]", entry.section),
+                    Style::default().fg(Color::Magenta),
                 ));
-            }
 
-            // Add section
-            spans.push(Span::raw(" "));
-            spans.push(Span::styled(
-                format!("[{}]", entry.section),
-                Style::default().fg(Color::Magenta),
-            ));
+                // Add elapsed time if done
+                if let Some(Some(done_time_str)) = entry.tags.get("done") {
+                    // Parse done timestamp
+                    if let Ok(done_time) =
+                        chrono::NaiveDateTime::parse_from_str(done_time_str, "%Y-%m-%d %H:%M")
+                    {
+                        let done_local = Local
+                            .from_local_datetime(&done_time)
+                            .single()
+                            .unwrap_or_else(Local::now);
+                        let duration = done_local.timestamp() - entry.timestamp.timestamp();
+                        if duration > 0 {
+                            let elapsed = Duration::seconds(duration);
+                            let hours = elapsed.num_hours();
+                            let minutes = (elapsed.num_minutes() % 60) as u32;
+                            let seconds = (elapsed.num_seconds() % 60) as u32;
 
-            // Add elapsed time if done
-            if let Some(Some(done_time_str)) = entry.tags.get("done") {
-                // Parse done timestamp
-                if let Ok(done_time) = chrono::NaiveDateTime::parse_from_str(done_time_str, "%Y-%m-%d %H:%M") {
-                    let done_local = Local.from_local_datetime(&done_time).single().unwrap_or_else(Local::now);
-                    let duration = done_local.timestamp() - entry.timestamp.timestamp();
-                    if duration > 0 {
-                        let elapsed = Duration::seconds(duration);
-                        let hours = elapsed.num_hours();
-                        let minutes = (elapsed.num_minutes() % 60) as u32;
-                        let seconds = (elapsed.num_seconds() % 60) as u32;
-                        
-                        spans.push(Span::raw(" "));
-                        spans.push(Span::styled(
-                            format!("{hours:02}:{minutes:02}:{seconds:02}"),
-                            Style::default().fg(Color::Cyan),
-                        ));
+                            spans.push(Span::raw(" "));
+                            spans.push(Span::styled(
+                                format!("{hours:02}:{minutes:02}:{seconds:02}"),
+                                Style::default().fg(Color::Cyan),
+                            ));
+                        }
                     }
                 }
-            }
 
-            lines.push(Line::from(spans));
+                lines.push(Line::from(spans));
 
-            // Add note lines if present
-            if let Some(note) = &entry.note {
-                for note_line in note.lines() {
-                    lines.push(Line::from(vec![
-                        Span::raw("                     ┃ "),
-                        Span::styled(note_line, Style::default().fg(Color::Gray)),
-                    ]));
+                // Add note lines if present
+                if let Some(note) = &entry.note {
+                    for note_line in note.lines() {
+                        lines.push(Line::from(vec![
+                            Span::raw("                     ┃ "),
+                            Span::styled(note_line, Style::default().fg(Color::Gray)),
+                        ]));
+                    }
                 }
-            }
 
-            let style = if i == self.selected {
-                Style::default().bg(Color::DarkGray)
-            } else {
-                Style::default()
-            };
+                let style = if i == self.selected {
+                    Style::default().bg(Color::DarkGray)
+                } else {
+                    Style::default()
+                };
 
-            ListItem::new(lines).style(style)
-        }).collect();
+                ListItem::new(lines).style(style)
+            })
+            .collect();
 
-        let entries_list = List::new(items)
-            .block(Block::default().borders(Borders::ALL).title("Entries"));
+        let entries_list =
+            List::new(items).block(Block::default().borders(Borders::ALL).title("Entries"));
         frame.render_widget(entries_list, chunks[1]);
 
         // Help/status bar
@@ -218,7 +236,11 @@ impl App {
             "q: quit | ↑/↓: navigate | Enter: details | e: edit | n: note | d: delete | Space: toggle done | r: reload".to_string()
         };
         let help = Paragraph::new(help_text)
-            .style(Style::default().fg(if self.error.is_some() { Color::Red } else { Color::Gray }))
+            .style(Style::default().fg(if self.error.is_some() {
+                Color::Red
+            } else {
+                Color::Gray
+            }))
             .block(Block::default().borders(Borders::ALL));
         frame.render_widget(help, chunks[2]);
     }
@@ -228,12 +250,20 @@ impl App {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(1)
-            .constraints([Constraint::Length(3), Constraint::Min(0), Constraint::Length(3)])
+            .constraints([
+                Constraint::Length(3),
+                Constraint::Min(0),
+                Constraint::Length(3),
+            ])
             .split(frame.area());
 
         // Title
         let title = Paragraph::new("Entry Details")
-            .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+            .style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )
             .block(Block::default().borders(Borders::ALL));
         frame.render_widget(title, chunks[0]);
 
@@ -249,34 +279,42 @@ impl App {
                 ]),
                 Line::from(""),
                 Line::from(vec![
-                    Span::styled("Description: ", Style::default().add_modifier(Modifier::BOLD)),
+                    Span::styled(
+                        "Description: ",
+                        Style::default().add_modifier(Modifier::BOLD),
+                    ),
                     Span::raw(&entry.description),
                 ]),
                 Line::from(""),
                 Line::from(vec![
                     Span::styled("Section: ", Style::default().add_modifier(Modifier::BOLD)),
-                    Span::styled(
-                        &entry.section,
-                        Style::default().fg(Color::Magenta),
-                    ),
+                    Span::styled(&entry.section, Style::default().fg(Color::Magenta)),
                 ]),
             ];
 
             // Add elapsed time if done
             if let Some(Some(done_time_str)) = entry.tags.get("done") {
                 // Parse done timestamp
-                if let Ok(done_time) = chrono::NaiveDateTime::parse_from_str(done_time_str, "%Y-%m-%d %H:%M") {
-                    let done_local = Local.from_local_datetime(&done_time).single().unwrap_or_else(Local::now);
+                if let Ok(done_time) =
+                    chrono::NaiveDateTime::parse_from_str(done_time_str, "%Y-%m-%d %H:%M")
+                {
+                    let done_local = Local
+                        .from_local_datetime(&done_time)
+                        .single()
+                        .unwrap_or_else(Local::now);
                     let duration = done_local.timestamp() - entry.timestamp.timestamp();
                     if duration > 0 {
                         let elapsed = Duration::seconds(duration);
                         let hours = elapsed.num_hours();
                         let minutes = (elapsed.num_minutes() % 60) as u32;
                         let seconds = (elapsed.num_seconds() % 60) as u32;
-                        
+
                         text.push(Line::from(""));
                         text.push(Line::from(vec![
-                            Span::styled("Elapsed Time: ", Style::default().add_modifier(Modifier::BOLD)),
+                            Span::styled(
+                                "Elapsed Time: ",
+                                Style::default().add_modifier(Modifier::BOLD),
+                            ),
                             Span::styled(
                                 format!("{hours:02}:{minutes:02}:{seconds:02}"),
                                 Style::default().fg(Color::Cyan),
@@ -289,7 +327,10 @@ impl App {
             // Add tags
             if !entry.tags.is_empty() {
                 text.push(Line::from(""));
-                text.push(Line::from(Span::styled("Tags:", Style::default().add_modifier(Modifier::BOLD))));
+                text.push(Line::from(Span::styled(
+                    "Tags:",
+                    Style::default().add_modifier(Modifier::BOLD),
+                )));
                 for (tag, value) in &entry.tags {
                     text.push(Line::from(vec![
                         Span::raw("  "),
@@ -308,7 +349,10 @@ impl App {
             // Add note
             if let Some(note) = &entry.note {
                 text.push(Line::from(""));
-                text.push(Line::from(Span::styled("Note:", Style::default().add_modifier(Modifier::BOLD))));
+                text.push(Line::from(Span::styled(
+                    "Note:",
+                    Style::default().add_modifier(Modifier::BOLD),
+                )));
                 for line in note.lines() {
                     text.push(Line::from(vec![
                         Span::raw("  "),
@@ -324,9 +368,10 @@ impl App {
         }
 
         // Help bar
-        let help = Paragraph::new("Press e to edit, n to edit note, Esc or Enter to return to list view")
-            .style(Style::default().fg(Color::Gray))
-            .block(Block::default().borders(Borders::ALL));
+        let help =
+            Paragraph::new("Press e to edit, n to edit note, Esc or Enter to return to list view")
+                .style(Style::default().fg(Color::Gray))
+                .block(Block::default().borders(Borders::ALL));
         frame.render_widget(help, chunks[2]);
     }
 
@@ -335,24 +380,31 @@ impl App {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(1)
-            .constraints([Constraint::Length(3), Constraint::Min(0), Constraint::Length(3)])
+            .constraints([
+                Constraint::Length(3),
+                Constraint::Min(0),
+                Constraint::Length(3),
+            ])
             .split(frame.area());
 
         // Title
         let title = Paragraph::new("Edit Entry Description")
-            .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+            .style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )
             .block(Block::default().borders(Borders::ALL));
         frame.render_widget(title, chunks[0]);
 
         // Text area for editing
-        self.edit_textarea.set_style(Style::default().fg(Color::White));
-        self.edit_textarea.set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
+        self.edit_textarea
+            .set_style(Style::default().fg(Color::White));
+        self.edit_textarea
+            .set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
         self.edit_textarea.set_cursor_line_style(Style::default());
-        self.edit_textarea.set_block(
-            Block::default()
-                .borders(Borders::ALL)
-                .title("Description")
-        );
+        self.edit_textarea
+            .set_block(Block::default().borders(Borders::ALL).title("Description"));
         frame.render_widget(&self.edit_textarea, chunks[1]);
 
         // Help bar
@@ -367,23 +419,33 @@ impl App {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .margin(1)
-            .constraints([Constraint::Length(3), Constraint::Min(0), Constraint::Length(3)])
+            .constraints([
+                Constraint::Length(3),
+                Constraint::Min(0),
+                Constraint::Length(3),
+            ])
             .split(frame.area());
 
         // Title
         let title = Paragraph::new("Edit Entry Note")
-            .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+            .style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )
             .block(Block::default().borders(Borders::ALL));
         frame.render_widget(title, chunks[0]);
 
         // Text area for editing note
-        self.note_textarea.set_style(Style::default().fg(Color::White));
-        self.note_textarea.set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
+        self.note_textarea
+            .set_style(Style::default().fg(Color::White));
+        self.note_textarea
+            .set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
         self.note_textarea.set_cursor_line_style(Style::default());
         self.note_textarea.set_block(
             Block::default()
                 .borders(Borders::ALL)
-                .title("Note (leave empty to remove note)")
+                .title("Note (leave empty to remove note)"),
         );
         frame.render_widget(&self.note_textarea, chunks[1]);
 
@@ -551,7 +613,7 @@ impl App {
             }
         }
     }
-    
+
     /// Toggle the @done status of the selected entry
     fn toggle_done(&mut self) {
         if let Some(entry) = self.entries.get(self.selected) {
@@ -574,7 +636,8 @@ impl App {
         if let Some(entry) = self.entries.get(self.selected) {
             // Initialize the text area with the current description
             self.edit_textarea = TextArea::new(vec![entry.description.clone()]);
-            self.edit_textarea.move_cursor(tui_textarea::CursorMove::End);
+            self.edit_textarea
+                .move_cursor(tui_textarea::CursorMove::End);
             self.mode = AppMode::EditEntry;
         }
     }
@@ -583,13 +646,13 @@ impl App {
     fn save_edit(&mut self) {
         if let Some(entry) = self.entries.get(self.selected) {
             let new_description = self.edit_textarea.lines().join("\n").trim().to_string();
-            
+
             // Don't save if description is empty
             if new_description.is_empty() {
                 self.error = Some("Description cannot be empty".to_string());
                 return;
             }
-            
+
             // Use the service layer to update the entry
             match EntryService::update_entry_description(&entry.uuid, new_description) {
                 Ok(_updated_entry) => {
@@ -619,7 +682,8 @@ impl App {
                 vec!["".to_string()]
             };
             self.note_textarea = TextArea::new(note_lines);
-            self.note_textarea.move_cursor(tui_textarea::CursorMove::End);
+            self.note_textarea
+                .move_cursor(tui_textarea::CursorMove::End);
             self.mode = AppMode::EditNote;
         }
     }
@@ -628,14 +692,14 @@ impl App {
     fn save_note(&mut self) {
         if let Some(entry) = self.entries.get(self.selected) {
             let new_note_text = self.note_textarea.lines().join("\n").trim().to_string();
-            
+
             // Convert empty string to None (remove note)
             let new_note = if new_note_text.is_empty() {
                 None
             } else {
                 Some(new_note_text)
             };
-            
+
             // Use the service layer to update the entry note
             match EntryService::update_entry_note(&entry.uuid, new_note) {
                 Ok(_updated_entry) => {

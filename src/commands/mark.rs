@@ -36,17 +36,19 @@ struct EntryFilter {
 
 pub fn handle_mark(opts: MarkOptions) -> color_eyre::Result<()> {
     if opts.interactive {
-        return Err(color_eyre::eyre::eyre!("Interactive mode not yet implemented"));
+        return Err(color_eyre::eyre::eyre!(
+            "Interactive mode not yet implemented"
+        ));
     }
 
     // Validate count and force
     if opts.count == 0 && !opts.force {
         print!("Are you sure you want to flag all entries? [y/N] ");
         io::stdout().flush()?;
-        
+
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
-        
+
         if !input.trim().eq_ignore_ascii_case("y") {
             println!("Flag operation cancelled.");
             return Ok(());
@@ -55,9 +57,9 @@ pub fn handle_mark(opts: MarkOptions) -> color_eyre::Result<()> {
 
     let config = Config::load();
     let doing_file_path = config.doing_file_path();
-    
+
     let mut doing_file = parse_taskpaper(&doing_file_path)?;
-    
+
     // Find entries to modify
     let filter = EntryFilter {
         sections: opts.sections.clone(),
@@ -87,40 +89,50 @@ pub fn handle_mark(opts: MarkOptions) -> color_eyre::Result<()> {
                     } else {
                         // Add flagged tag
                         if opts.date {
-                            entry.tags.insert("flagged".to_string(), Some(Local::now().format("%Y-%m-%d %H:%M").to_string()));
+                            entry.tags.insert(
+                                "flagged".to_string(),
+                                Some(Local::now().format("%Y-%m-%d %H:%M").to_string()),
+                            );
                         } else {
                             entry.tags.insert("flagged".to_string(), None);
                         }
                     }
-                    
+
                     // Print updated entry
-                    println!("{}: {} {}", 
+                    println!(
+                        "{}: {} {}",
                         entry.timestamp.format("%Y-%m-%d %H:%M"),
                         entry.description,
                         format_tags(&entry.tags)
                     );
-                    
+
                     modified_count += 1;
                     break;
                 }
             }
         }
     }
-    
+
     save_taskpaper(&doing_file)?;
-    
+
     let action = if opts.remove { "Unflagged" } else { "Flagged" };
-    println!("\n{} {} {}.", 
+    println!(
+        "\n{} {} {}.",
         action,
-        modified_count, 
-        if modified_count == 1 { "entry" } else { "entries" }
+        modified_count,
+        if modified_count == 1 {
+            "entry"
+        } else {
+            "entries"
+        }
     );
-    
+
     Ok(())
 }
 
 fn format_tags(tags: &std::collections::HashMap<String, Option<String>>) -> String {
-    let mut tag_strs: Vec<String> = tags.iter()
+    let mut tag_strs: Vec<String> = tags
+        .iter()
         .map(|(tag, value)| {
             if let Some(val) = value {
                 format!("@{tag}({val})")
@@ -143,7 +155,7 @@ fn find_entries_to_modify(
     } else {
         filter.sections.clone()
     };
-    
+
     // Collect all entries from target sections
     let mut all_entries: Vec<(String, Entry)> = Vec::new();
     for section in &target_sections {
@@ -153,28 +165,29 @@ fn find_entries_to_modify(
             }
         }
     }
-    
+
     // Sort by timestamp (newest first)
     all_entries.sort_by(|a, b| b.1.timestamp.cmp(&a.1.timestamp));
-    
+
     // Apply filters
     let mut filtered_entries = all_entries;
-    
+
     // Apply search filter
     if let Some(search_query) = &filter.search {
-        filtered_entries = filter_by_search(filtered_entries, search_query, filter.exact, &filter.case)?;
+        filtered_entries =
+            filter_by_search(filtered_entries, search_query, filter.exact, &filter.case)?;
     }
-    
+
     // Apply tag filter
     if let Some(tag_query) = &filter.tag {
         filtered_entries = filter_by_tag(filtered_entries, tag_query)?;
     }
-    
+
     // Apply unfinished filter
     if filter.unfinished {
         filtered_entries.retain(|(_, entry)| !entry.is_done());
     }
-    
+
     // Apply NOT filter if specified
     if filter.not {
         // Get all entries again
@@ -187,24 +200,25 @@ fn find_entries_to_modify(
             }
         }
         all_entries_again.sort_by(|a, b| b.1.timestamp.cmp(&a.1.timestamp));
-        
-        let filtered_uuids: std::collections::HashSet<_> = filtered_entries.iter()
-            .map(|(_, e)| e.uuid)
-            .collect();
-        
-        filtered_entries = all_entries_again.into_iter()
+
+        let filtered_uuids: std::collections::HashSet<_> =
+            filtered_entries.iter().map(|(_, e)| e.uuid).collect();
+
+        filtered_entries = all_entries_again
+            .into_iter()
             .filter(|(_, entry)| !filtered_uuids.contains(&entry.uuid))
             .collect();
     }
-    
+
     // Take only the requested count (0 means all)
     let entries = if filter.count == 0 {
         filtered_entries
     } else {
         filtered_entries.into_iter().take(filter.count).collect()
     };
-    
-    Ok(entries.into_iter()
+
+    Ok(entries
+        .into_iter()
         .map(|(section, entry)| (section, entry.uuid))
         .collect())
 }
@@ -219,26 +233,26 @@ fn filter_by_search(
     let case_sensitive = match case {
         "c" | "case-sensitive" => true,
         "i" | "ignore" => false,
-        "s" | "smart" => {
-            search_query.chars().any(|c| c.is_uppercase())
-        }
+        "s" | "smart" => search_query.chars().any(|c| c.is_uppercase()),
         _ => false,
     };
 
     let filtered = if search_query.starts_with('/') && search_query.ends_with('/') {
         // Regex search
-        let pattern = &search_query[1..search_query.len()-1];
+        let pattern = &search_query[1..search_query.len() - 1];
         let regex = if case_sensitive {
             Regex::new(pattern)?
         } else {
             Regex::new(&format!("(?i){pattern}"))?
         };
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|(_, entry)| regex.is_match(&entry.description))
             .collect()
     } else if let Some(query) = search_query.strip_prefix('\'') {
         // Exact match
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|(_, entry)| {
                 if case_sensitive {
                     entry.description == query
@@ -249,28 +263,36 @@ fn filter_by_search(
             .collect()
     } else if exact {
         // Exact substring match
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|(_, entry)| {
                 if case_sensitive {
                     entry.description.contains(search_query)
                 } else {
-                    entry.description.to_lowercase().contains(&search_query.to_lowercase())
+                    entry
+                        .description
+                        .to_lowercase()
+                        .contains(&search_query.to_lowercase())
                 }
             })
             .collect()
     } else {
         // Regular substring matching
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|(_, entry)| {
                 if case_sensitive {
                     entry.description.contains(search_query)
                 } else {
-                    entry.description.to_lowercase().contains(&search_query.to_lowercase())
+                    entry
+                        .description
+                        .to_lowercase()
+                        .contains(&search_query.to_lowercase())
                 }
             })
             .collect()
     };
-    
+
     Ok(filtered)
 }
 
@@ -279,8 +301,9 @@ fn filter_by_tag(
     tag_query: &str,
 ) -> Result<Vec<(String, Entry)>, color_eyre::eyre::Error> {
     let tags: Vec<&str> = tag_query.split(',').map(|s| s.trim()).collect();
-    
-    let filtered = entries.into_iter()
+
+    let filtered = entries
+        .into_iter()
         .filter(|(_, entry)| {
             // Check if entry has any of the requested tags
             for tag in &tags {
@@ -301,6 +324,6 @@ fn filter_by_tag(
             false
         })
         .collect();
-    
+
     Ok(filtered)
 }

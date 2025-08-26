@@ -21,7 +21,8 @@ pub fn parse_taskpaper(path: &Path) -> color_eyre::Result<DoingFile> {
 
     let project_regex = Regex::new(r"^(.+):$")?;
     // Updated regex to match: - YYYY-MM-DD HH:MM | description <uuid>
-    let task_regex = Regex::new(r"^ - (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) \| (.+?) <([a-f0-9-]{36})>$")?;
+    let task_regex =
+        Regex::new(r"^ - (\d{4}-\d{2}-\d{2} \d{2}:\d{2}) \| (.+?) <([a-f0-9-]{36})>$")?;
     let tag_regex = Regex::new(r"@(\w+)(?:\(([^)]+)\))?")?;
 
     for line in content.lines() {
@@ -31,7 +32,10 @@ pub fn parse_taskpaper(path: &Path) -> color_eyre::Result<DoingFile> {
             }
             current_section = captures[1].to_string();
             // Ensure the section exists even if it's empty
-            doing_file.sections.entry(current_section.clone()).or_default();
+            doing_file
+                .sections
+                .entry(current_section.clone())
+                .or_default();
         } else if let Some(captures) = task_regex.captures(line) {
             if let Some(entry) = current_entry.take() {
                 doing_file.add_entry(entry);
@@ -40,33 +44,33 @@ pub fn parse_taskpaper(path: &Path) -> color_eyre::Result<DoingFile> {
             let timestamp_str = &captures[1];
             let task_line = &captures[2];
             let uuid_str = &captures[3];
-            
+
             // Parse timestamp as local time
             let timestamp = chrono::NaiveDateTime::parse_from_str(timestamp_str, "%Y-%m-%d %H:%M")
                 .ok()
                 .and_then(|naive| Local.from_local_datetime(&naive).single())
                 .unwrap_or_else(Local::now);
-                
+
             // Parse UUID
             let uuid = Uuid::parse_str(uuid_str).unwrap_or_else(|_| Uuid::new_v4());
-            
+
             let mut description = task_line.to_string();
             let mut tags = HashMap::new();
-            
+
             // Extract tags from the description
             for tag_capture in tag_regex.captures_iter(task_line) {
                 let tag_name = tag_capture[1].to_string();
                 let tag_value = tag_capture.get(2).map(|m| m.as_str().to_string());
                 tags.insert(tag_name, tag_value);
-                
+
                 description = description.replace(&tag_capture[0], "").trim().to_string();
             }
-            
+
             let mut entry = Entry::new(description, current_section.clone());
             entry.tags = tags;
             entry.timestamp = timestamp;
             entry.uuid = uuid;
-            
+
             current_entry = Some(entry);
         } else if line.starts_with("  ") && !line.starts_with(" -") && current_entry.is_some() {
             if let Some(ref mut entry) = current_entry {

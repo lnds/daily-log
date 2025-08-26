@@ -1,5 +1,7 @@
-use crate::display::{DisplayOptions, OutputFormat, TagSort, SortOrder, display_entries};
-use crate::filtering::{FilterOptions, CaseSensitivity, BoolOp, filter_entries, parse_date_filter, parse_date_range};
+use crate::display::{DisplayOptions, OutputFormat, SortOrder, TagSort, display_entries};
+use crate::filtering::{
+    BoolOp, CaseSensitivity, FilterOptions, filter_entries, parse_date_filter, parse_date_range,
+};
 use crate::storage::{Config, parse_taskpaper};
 use chrono::Local;
 
@@ -52,7 +54,8 @@ pub fn handle_on(
 
     // If no end date specified, use end of day
     let end_date = end_date.unwrap_or_else(|| {
-        start_date.date_naive()
+        start_date
+            .date_naive()
             .and_hms_opt(23, 59, 59)
             .unwrap()
             .and_local_timezone(Local)
