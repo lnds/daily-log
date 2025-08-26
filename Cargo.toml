@@ -1,6 +1,6 @@
 [package]
 name = "daily-log"
-version = "0.1.0"
+version = "0.1.1"
 description = "register daily activities"
 authors = ["Eduardo Díaz <ediaz@dcc8090.cl>"]
 license = "MIT"
