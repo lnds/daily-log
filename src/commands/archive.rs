@@ -119,40 +119,35 @@ pub fn handle_archive(opts: ArchiveOptions) -> Result<()> {
                 let mut matches = true;
 
                 // Apply date filters
-                if let Some(after) = &after_date {
-                    if entry.timestamp <= *after {
+                if let Some(after) = &after_date
+                    && entry.timestamp <= *after {
                         matches = false;
                     }
-                }
-                if let Some(before) = &before_date {
-                    if entry.timestamp >= *before {
+                if let Some(before) = &before_date
+                    && entry.timestamp >= *before {
                         matches = false;
                     }
-                }
-                if let Some((start, end)) = &date_range {
-                    if entry.timestamp < *start || entry.timestamp > *end {
+                if let Some((start, end)) = &date_range
+                    && (entry.timestamp < *start || entry.timestamp > *end) {
                         matches = false;
                     }
-                }
 
                 // Apply target filter (tag)
-                if let Some(target_str) = &opts.target {
-                    if target_str.starts_with('@') {
+                if let Some(target_str) = &opts.target
+                    && target_str.starts_with('@') {
                         let tag_name = target_str.trim_start_matches('@');
                         if !entry.tags.contains_key(tag_name) {
                             matches = false;
                         }
                     }
-                }
 
                 // Apply search filter
-                if let Some(ref regex) = search_regex {
-                    if !regex.is_match(&entry.description)
+                if let Some(ref regex) = search_regex
+                    && !regex.is_match(&entry.description)
                         && !entry.note.as_ref().is_some_and(|n| regex.is_match(n))
                     {
                         matches = false;
                     }
-                }
 
                 // Apply tag filter
                 if let Some(ref regex) = tag_regex {
@@ -185,8 +180,8 @@ pub fn handle_archive(opts: ArchiveOptions) -> Result<()> {
             }
 
             // Apply keep filter - keep only the most recent N entries
-            if let Some(keep_count) = opts.keep {
-                if indices_to_move.len() > keep_count {
+            if let Some(keep_count) = opts.keep
+                && indices_to_move.len() > keep_count {
                     // Keep the last N entries (most recent)
                     indices_to_move = indices_to_move
                         .into_iter()
@@ -195,7 +190,6 @@ pub fn handle_archive(opts: ArchiveOptions) -> Result<()> {
                         .rev()
                         .collect();
                 }
-            }
 
             // Collect entries in reverse order to maintain indices
             for &index in indices_to_move.iter().rev() {
@@ -207,8 +201,8 @@ pub fn handle_archive(opts: ArchiveOptions) -> Result<()> {
     // Move entries
     let mut moved_count = 0;
     for (section_name, index) in entries_to_move {
-        if let Some(entries) = doing_file.sections.get_mut(&section_name) {
-            if index < entries.len() {
+        if let Some(entries) = doing_file.sections.get_mut(&section_name)
+            && index < entries.len() {
                 let mut entry = entries.remove(index);
 
                 // Add label if requested
@@ -227,7 +221,6 @@ pub fn handle_archive(opts: ArchiveOptions) -> Result<()> {
                     }
                 }
             }
-        }
     }
 
     if moved_count > 0 {

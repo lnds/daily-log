@@ -82,11 +82,10 @@ pub fn parse_taskpaper(path: &Path) -> color_eyre::Result<DoingFile> {
                     entry.note = Some(note_line.to_string());
                 }
             }
-        } else if line.trim().is_empty() {
-            if let Some(entry) = current_entry.take() {
+        } else if line.trim().is_empty()
+            && let Some(entry) = current_entry.take() {
                 doing_file.add_entry(entry);
             }
-        }
     }
 
     if let Some(entry) = current_entry {
