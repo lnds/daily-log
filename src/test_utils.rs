@@ -118,10 +118,7 @@ Archive:
 
                 line.push_str(&format!(" <{}>", entry.uuid.unwrap_or_else(Uuid::new_v4)));
 
-                sections
-                    .entry(section.clone())
-                    .or_default()
-                    .push(line);
+                sections.entry(section.clone()).or_default().push(line);
 
                 if let Some(note) = entry.note {
                     for note_line in note.lines() {
