@@ -124,17 +124,18 @@ pub fn handle_done(opts: DoneOptions) -> color_eyre::Result<()> {
                         && let Some(pos) = entries.iter().position(|e| {
                             e.timestamp.format("%Y-%m-%d %H:%M").to_string() == *time_str
                                 && e.description == *desc
-                        }) {
-                            let mut entry = entries.remove(pos);
-                            entry.section = "Archive".to_string();
+                        })
+                    {
+                        let mut entry = entries.remove(pos);
+                        entry.section = "Archive".to_string();
 
-                            // Add to Archive section
-                            doing_file
-                                .sections
-                                .entry("Archive".to_string())
-                                .or_insert_with(Vec::new)
-                                .push(entry);
-                        }
+                        // Add to Archive section
+                        doing_file
+                            .sections
+                            .entry("Archive".to_string())
+                            .or_insert_with(Vec::new)
+                            .push(entry);
+                    }
                 }
 
                 save_taskpaper(&doing_file)?;
@@ -385,11 +386,12 @@ fn calculate_times(
 fn parse_duration(duration_str: &str) -> Result<Duration, color_eyre::eyre::Error> {
     // Try to parse as HH:MM
     if let Ok(re) = Regex::new(r"^(\d+):(\d+)$")
-        && let Some(captures) = re.captures(duration_str) {
-            let hours: i64 = captures[1].parse()?;
-            let minutes: i64 = captures[2].parse()?;
-            return Ok(Duration::hours(hours) + Duration::minutes(minutes));
-        }
+        && let Some(captures) = re.captures(duration_str)
+    {
+        let hours: i64 = captures[1].parse()?;
+        let minutes: i64 = captures[2].parse()?;
+        return Ok(Duration::hours(hours) + Duration::minutes(minutes));
+    }
 
     // Try to parse compound durations like 2h30m
     let mut total_duration = Duration::zero();
