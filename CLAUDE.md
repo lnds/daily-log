@@ -249,8 +249,6 @@ cargo test test_name
      - Advanced filtering (search, tags, sections)
      - TUI integration with 'd' key
 
-### 🚧 Next Implementation Phases
-
 6. **Phase 6: Entry Management** ✅ COMPLETE
    - ✅ `again, resume` - Repeat last entry as new entry
      - Duplicates most recent entry with new timestamp
@@ -324,13 +322,25 @@ cargo test test_name
      - Sort by name or count
      - Filter by section/search
 
-9. **Phase 9: Configuration & Views**
-   - `config` - Edit configuration file
-   - `view` - Display user-created views
-   - `views` - List available custom views
-   - Custom output formats (JSON, CSV, HTML)
+### 🚧 Next Implementation Phases
 
-10. **Phase 10: Advanced Features**
+9. **Phase 9: TUI Enhancements**
+   - Edit entry description directly in TUI
+   - Add/edit notes for entries
+   - Tag management (add/remove tags)
+   - Modify elapsed time (@done timestamp)
+   - Filter entries by section
+   - Section-specific TUI mode (`tui -s SectionName`)
+   - Search/filter within TUI
+   - Keyboard shortcuts for common operations
+
+10. **Phase 10: Configuration & Views**
+    - `config` - Edit configuration file
+    - `view` - Display user-created views
+    - `views` - List available custom views
+    - Custom output formats (JSON, CSV, HTML)
+
+11. **Phase 11: Advanced Features**
     - `undo/redo` - Undo/redo changes
     - `import` - Import from external sources
     - `select` - Interactive menu operations
@@ -568,4 +578,3 @@ When adding a new command:
 - [ ] Test manually with various inputs
 - [ ] Update CLAUDE.md documentation
 - [ ] Ensure `cargo build` and `cargo test` pass without warnings
-

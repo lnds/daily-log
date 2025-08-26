@@ -41,9 +41,9 @@ fn main() -> color_eyre::Result<()> {
         Some(Commands::Today { section }) => {
             commands::handle_today(section)?;
         }
-        Some(Commands::Tui) => {
+        Some(Commands::Tui { section }) => {
             let terminal = ratatui::init();
-            let result = App::new().run(terminal);
+            let result = App::new_with_section(section).run(terminal);
             ratatui::restore();
             result?;
         }

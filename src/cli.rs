@@ -101,7 +101,11 @@ pub enum Commands {
     },
 
     /// Launch the TUI interface
-    Tui,
+    Tui {
+        /// Show entries from a specific section
+        #[arg(short, long)]
+        section: Option<String>,
+    },
 
     /// Add a completed item with @done(date). No argument finishes last entry
     Done {

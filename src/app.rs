@@ -7,7 +7,6 @@ use ratatui::{
     text::{Line, Span},
     widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
 };
-use crate::storage::{Config, parse_taskpaper};
 use crate::models::Entry;
 use crate::services::EntryService;
 use chrono::{Local, Duration, TimeZone};
@@ -25,6 +24,8 @@ pub struct App {
     error: Option<String>,
     /// Show detailed view of selected entry
     show_detail: bool,
+    /// Section filter (if any)
+    section_filter: Option<String>,
 }
 
 impl Default for App {
@@ -36,12 +37,18 @@ impl Default for App {
 impl App {
     /// Construct a new instance of [`App`].
     pub fn new() -> Self {
+        Self::new_with_section(None)
+    }
+
+    /// Construct a new instance of [`App`] with section filter.
+    pub fn new_with_section(section: Option<String>) -> Self {
         let mut app = Self {
             running: false,
             entries: Vec::new(),
             selected: 0,
             error: None,
             show_detail: false,
+            section_filter: section,
         };
         app.load_entries();
         app
@@ -49,14 +56,9 @@ impl App {
 
     /// Load entries from the doing file
     fn load_entries(&mut self) {
-        let config = Config::load();
-        let doing_file_path = config.doing_file_path();
-        match parse_taskpaper(&doing_file_path) {
-            Ok(doing_file) => {
-                self.entries = doing_file.get_recent_entries(50)
-                    .into_iter()
-                    .cloned()
-                    .collect();
+        match EntryService::get_tui_entries(self.section_filter.as_deref(), 50) {
+            Ok(entries) => {
+                self.entries = entries;
                 self.error = None;
             }
             Err(e) => {
@@ -89,7 +91,12 @@ impl App {
             .split(frame.area());
 
         // Title
-        let title = Paragraph::new("Daily Log - Doing TUI")
+        let title_text = if let Some(ref section) = self.section_filter {
+            format!("Daily Log - Doing TUI [Section: {section}]")
+        } else {
+            "Daily Log - Doing TUI".to_string()
+        };
+        let title = Paragraph::new(title_text)
             .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
             .block(Block::default().borders(Borders::ALL));
         frame.render_widget(title, chunks[0]);

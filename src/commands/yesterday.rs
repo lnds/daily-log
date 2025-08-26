@@ -51,7 +51,7 @@ pub fn handle_yesterday(opts: YesterdayOptions) -> color_eyre::Result<()> {
 
     // Apply time filters if specified
     if let Some(after_str) = &opts.after {
-        let after_time = parse_date_filter(&after_str)?;
+        let after_time = parse_date_filter(after_str)?;
         // Apply time to yesterday's date
         let time = after_time.time();
         filter_opts.after = Some(
@@ -63,7 +63,7 @@ pub fn handle_yesterday(opts: YesterdayOptions) -> color_eyre::Result<()> {
     }
 
     if let Some(before_str) = &opts.before {
-        let before_time = parse_date_filter(&before_str)?;
+        let before_time = parse_date_filter(before_str)?;
         // Apply time to yesterday's date
         let time = before_time.time();
         filter_opts.before = Some(
@@ -76,7 +76,7 @@ pub fn handle_yesterday(opts: YesterdayOptions) -> color_eyre::Result<()> {
 
     if let Some(from_str) = &opts.from {
         // Parse time range and apply to yesterday
-        let (from_time, to_time) = parse_date_range(&from_str)?;
+        let (from_time, to_time) = parse_date_range(from_str)?;
         filter_opts.after = Some(
             yesterday.date_naive()
                 .and_time(from_time.time())

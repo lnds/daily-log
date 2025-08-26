@@ -107,4 +107,34 @@ impl EntryService {
             .cloned()
             .unwrap_or_default())
     }
+    
+    /// Get entries for display in TUI, optionally filtered by section
+    pub fn get_tui_entries(section_filter: Option<&str>, limit: usize) -> Result<Vec<Entry>> {
+        let config = Config::load();
+        let doing_file_path = config.doing_file_path();
+        
+        let doing_file = parse_taskpaper(&doing_file_path)?;
+        
+        let mut entries: Vec<Entry> = if let Some(section) = section_filter {
+            // Get entries from specific section
+            doing_file.sections
+                .get(section)
+                .cloned()
+                .unwrap_or_default()
+        } else {
+            // Get all entries
+            doing_file.get_all_entries()
+                .into_iter()
+                .cloned()
+                .collect()
+        };
+        
+        // Sort by timestamp descending (most recent first)
+        entries.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
+        
+        // Limit to requested count
+        entries.truncate(limit);
+        
+        Ok(entries)
+    }
 }
