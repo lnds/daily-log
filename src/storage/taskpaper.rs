@@ -126,7 +126,7 @@ mod tests {
         writeln!(temp_file, " - 2025-07-28 16:24 | Working on parser @in_progress <7a1185c6-0241-52ac-0771-83f31c40acdd>").unwrap();
         writeln!(temp_file, "  This is a note").unwrap();
         writeln!(temp_file, " - 2025-07-28 12:28 | Completed task @done(2025-07-28 13:58) <e520e775-3401-241c-b8d2-ef3ad6ba3fa7>").unwrap();
-        writeln!(temp_file, "").unwrap();
+        writeln!(temp_file).unwrap();
         writeln!(temp_file, "Archive:").unwrap();
         writeln!(temp_file, " - 2025-07-28 09:37 | Archived task @priority(high) <ff20b760-b698-fe0b-d7a8-00213cb6cc3f>").unwrap();
 

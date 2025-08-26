@@ -1,5 +1,5 @@
 #[cfg(test)]
-pub mod test_utils {
+pub mod utils {
     use crate::storage::Config;
     use chrono::{DateTime, Duration, Local};
     use std::collections::HashMap;
@@ -109,7 +109,7 @@ Archive:
                 );
 
                 for tag in entry.tags {
-                    line.push_str(&format!(" @{}", tag));
+                    line.push_str(&format!(" @{tag}"));
                 }
 
                 if let Some(done_time) = entry.done_time {
@@ -120,7 +120,7 @@ Archive:
 
                 sections
                     .entry(section.clone())
-                    .or_insert_with(Vec::new)
+                    .or_default()
                     .push(line);
 
                 if let Some(note) = entry.note {
@@ -128,16 +128,16 @@ Archive:
                         sections
                             .get_mut(&section)
                             .unwrap()
-                            .push(format!("  {}", note_line));
+                            .push(format!("  {note_line}"));
                     }
                 }
             }
 
             let mut content = String::new();
             for (section, entries) in sections {
-                content.push_str(&format!("{}:\n", section));
+                content.push_str(&format!("{section}:\n"));
                 for entry in entries {
-                    content.push_str(&format!("{}\n", entry));
+                    content.push_str(&format!("{entry}\n"));
                 }
                 content.push('\n');
             }

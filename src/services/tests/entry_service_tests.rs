@@ -3,12 +3,12 @@ mod tests {
     use crate::models::{DoingFile, Entry};
     use crate::services::EntryService;
     use crate::storage::{Config, save_taskpaper};
-    use crate::test_utils::test_utils::*;
+    use crate::test_utils::utils::*;
     use chrono::Local;
 
     #[test]
     fn test_toggle_done_by_uuid() {
-        let ctx = TestContext::new().unwrap();
+        let _ctx = TestContext::new().unwrap();
 
         // Create an entry
         let entry = Entry::new("Test entry for toggle".to_string(), "Currently".to_string());
@@ -19,7 +19,7 @@ mod tests {
         doing_file
             .sections
             .entry("Currently".to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(entry.clone());
         save_taskpaper(&doing_file).unwrap();
 
@@ -34,7 +34,7 @@ mod tests {
 
     #[test]
     fn test_delete_by_uuid() {
-        let ctx = TestContext::new().unwrap();
+        let _ctx = TestContext::new().unwrap();
 
         // Create entries
         let entry1 = Entry::new("Entry to delete".to_string(), "Currently".to_string());
@@ -45,7 +45,7 @@ mod tests {
         doing_file
             .sections
             .entry("Currently".to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .extend(vec![entry1.clone(), entry2.clone()]);
         save_taskpaper(&doing_file).unwrap();
 
@@ -60,12 +60,12 @@ mod tests {
 
     #[test]
     fn test_get_recent_entries() {
-        let ctx = TestContext::new().unwrap();
+        let _ctx = TestContext::new().unwrap();
 
         // Create entries with different timestamps
         let mut entries = vec![];
         for i in 0..5 {
-            let mut entry = Entry::new(format!("Entry {}", i), "Currently".to_string());
+            let mut entry = Entry::new(format!("Entry {i}"), "Currently".to_string());
             entry.timestamp = Local::now() - chrono::Duration::hours(i as i64);
             entries.push(entry);
         }
@@ -75,7 +75,7 @@ mod tests {
         doing_file
             .sections
             .entry("Currently".to_string())
-            .or_insert_with(Vec::new)
+            .or_default()
             .extend(entries);
         save_taskpaper(&doing_file).unwrap();
 

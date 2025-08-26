@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::commands::handle_today;
-    use crate::test_utils::test_utils::{TestContext, TestEntry};
+    use crate::test_utils::utils::{TestContext, TestEntry};
     use chrono::{Duration, Local};
 
     #[test]

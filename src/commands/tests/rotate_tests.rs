@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::commands::{RotateOptions, handle_rotate};
-    use crate::test_utils::test_utils::*;
+    use crate::test_utils::utils::*;
     use chrono::Local;
 
     #[test]
