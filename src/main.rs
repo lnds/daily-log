@@ -276,7 +276,7 @@ fn main() -> color_eyre::Result<()> {
             })?;
         }
         Some(Commands::Note {
-            note: _,
+            note,
             ask,
             bool_op: _,
             case,
@@ -287,7 +287,7 @@ fn main() -> color_eyre::Result<()> {
             sections,
             search,
             tag,
-            val,
+            val: _,
             exact,
         }) => {
             commands::handle_note(
@@ -300,7 +300,7 @@ fn main() -> color_eyre::Result<()> {
                     not,
                 },
                 commands::NoteOptions {
-                    note: val,
+                    note: note,
                     ask,
                     editor,
                     remove,
