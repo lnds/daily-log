@@ -96,17 +96,18 @@ fn remove_section(doing_file: &mut DoingFile, section_name: &str, archive: bool)
     if archive {
         // Move entries to Archive section if requested
         if let Some(entries) = doing_file.sections.remove(section_name)
-            && !entries.is_empty() {
-                let archive_entries = doing_file
-                    .sections
-                    .entry("Archive".to_string())
-                    .or_default();
+            && !entries.is_empty()
+        {
+            let archive_entries = doing_file
+                .sections
+                .entry("Archive".to_string())
+                .or_default();
 
-                // Add entries to the beginning of Archive section
-                for entry in entries.into_iter().rev() {
-                    archive_entries.insert(0, entry);
-                }
+            // Add entries to the beginning of Archive section
+            for entry in entries.into_iter().rev() {
+                archive_entries.insert(0, entry);
             }
+        }
     } else {
         // Just remove the section
         doing_file.sections.remove(section_name);

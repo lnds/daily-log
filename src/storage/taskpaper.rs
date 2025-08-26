@@ -83,9 +83,10 @@ pub fn parse_taskpaper(path: &Path) -> color_eyre::Result<DoingFile> {
                 }
             }
         } else if line.trim().is_empty()
-            && let Some(entry) = current_entry.take() {
-                doing_file.add_entry(entry);
-            }
+            && let Some(entry) = current_entry.take()
+        {
+            doing_file.add_entry(entry);
+        }
     }
 
     if let Some(entry) = current_entry {

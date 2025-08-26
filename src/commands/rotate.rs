@@ -92,17 +92,18 @@ pub fn handle_rotate(opts: RotateOptions) -> Result<()> {
 
                 // Apply before date filter
                 if let Some(before) = &before_date
-                    && entry.timestamp >= *before {
-                        matches = false;
-                    }
+                    && entry.timestamp >= *before
+                {
+                    matches = false;
+                }
 
                 // Apply search filter
                 if let Some(ref regex) = search_regex
                     && !regex.is_match(&entry.description)
-                        && !entry.note.as_ref().is_some_and(|n| regex.is_match(n))
-                    {
-                        matches = false;
-                    }
+                    && !entry.note.as_ref().is_some_and(|n| regex.is_match(n))
+                {
+                    matches = false;
+                }
 
                 // Apply tag filter
                 if let Some(ref regex) = tag_regex {
@@ -136,10 +137,11 @@ pub fn handle_rotate(opts: RotateOptions) -> Result<()> {
 
             // Apply keep filter - keep only the oldest entries
             if let Some(keep_count) = opts.keep
-                && indices_to_rotate.len() > keep_count {
-                    // Keep the first N entries (oldest)
-                    indices_to_rotate.truncate(keep_count);
-                }
+                && indices_to_rotate.len() > keep_count
+            {
+                // Keep the first N entries (oldest)
+                indices_to_rotate.truncate(keep_count);
+            }
 
             // Collect entries in reverse order to maintain indices
             for &index in indices_to_rotate.iter().rev() {
@@ -154,20 +156,21 @@ pub fn handle_rotate(opts: RotateOptions) -> Result<()> {
 
     for (section_name, index) in entries_to_rotate {
         if let Some(entries) = doing_file.sections.get_mut(&section_name)
-            && index < entries.len() {
-                let entry = entries.remove(index);
+            && index < entries.len()
+        {
+            let entry = entries.remove(index);
 
-                // Add section tag if not from Archive
-                let mut entry_to_archive = entry.clone();
-                if section_name != "Archive" {
-                    entry_to_archive
-                        .tags
-                        .insert(format!("from_{}", section_name.to_lowercase()), None);
-                }
-
-                rotated_entries.push(entry_to_archive);
-                rotated_count += 1;
+            // Add section tag if not from Archive
+            let mut entry_to_archive = entry.clone();
+            if section_name != "Archive" {
+                entry_to_archive
+                    .tags
+                    .insert(format!("from_{}", section_name.to_lowercase()), None);
             }
+
+            rotated_entries.push(entry_to_archive);
+            rotated_count += 1;
+        }
     }
 
     // Add rotated entries to archive file

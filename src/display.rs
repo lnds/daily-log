@@ -435,11 +435,11 @@ fn calculate_duration(entry: &Entry) -> (String, Option<chrono::Duration>) {
     if let Some(Some(done_str)) = entry.tags.get("done")
         && let Ok(done_time) =
             chrono::DateTime::parse_from_str(&format!("{done_str} +0000"), "%Y-%m-%d %H:%M %z")
-        {
-            let duration = done_time.with_timezone(&Local) - entry.timestamp;
-            let duration_str = format!(" ({})", format_duration(&duration));
-            return (duration_str, Some(duration));
-        }
+    {
+        let duration = done_time.with_timezone(&Local) - entry.timestamp;
+        let duration_str = format!(" ({})", format_duration(&duration));
+        return (duration_str, Some(duration));
+    }
     (String::new(), None)
 }
 

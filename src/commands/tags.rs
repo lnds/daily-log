@@ -73,10 +73,10 @@ pub fn handle_tags(
                 // Apply search filter
                 if let Some(ref regex) = search_regex
                     && !regex.is_match(&entry.description)
-                        && !entry.note.as_ref().is_some_and(|n| regex.is_match(n))
-                    {
-                        matches = false;
-                    }
+                    && !entry.note.as_ref().is_some_and(|n| regex.is_match(n))
+                {
+                    matches = false;
+                }
 
                 // Apply tag filter
                 if let Some(ref regex) = tag_regex {

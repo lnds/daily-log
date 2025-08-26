@@ -120,34 +120,38 @@ pub fn handle_archive(opts: ArchiveOptions) -> Result<()> {
 
                 // Apply date filters
                 if let Some(after) = &after_date
-                    && entry.timestamp <= *after {
-                        matches = false;
-                    }
+                    && entry.timestamp <= *after
+                {
+                    matches = false;
+                }
                 if let Some(before) = &before_date
-                    && entry.timestamp >= *before {
-                        matches = false;
-                    }
+                    && entry.timestamp >= *before
+                {
+                    matches = false;
+                }
                 if let Some((start, end)) = &date_range
-                    && (entry.timestamp < *start || entry.timestamp > *end) {
-                        matches = false;
-                    }
+                    && (entry.timestamp < *start || entry.timestamp > *end)
+                {
+                    matches = false;
+                }
 
                 // Apply target filter (tag)
                 if let Some(target_str) = &opts.target
-                    && target_str.starts_with('@') {
-                        let tag_name = target_str.trim_start_matches('@');
-                        if !entry.tags.contains_key(tag_name) {
-                            matches = false;
-                        }
+                    && target_str.starts_with('@')
+                {
+                    let tag_name = target_str.trim_start_matches('@');
+                    if !entry.tags.contains_key(tag_name) {
+                        matches = false;
                     }
+                }
 
                 // Apply search filter
                 if let Some(ref regex) = search_regex
                     && !regex.is_match(&entry.description)
-                        && !entry.note.as_ref().is_some_and(|n| regex.is_match(n))
-                    {
-                        matches = false;
-                    }
+                    && !entry.note.as_ref().is_some_and(|n| regex.is_match(n))
+                {
+                    matches = false;
+                }
 
                 // Apply tag filter
                 if let Some(ref regex) = tag_regex {
@@ -181,15 +185,16 @@ pub fn handle_archive(opts: ArchiveOptions) -> Result<()> {
 
             // Apply keep filter - keep only the most recent N entries
             if let Some(keep_count) = opts.keep
-                && indices_to_move.len() > keep_count {
-                    // Keep the last N entries (most recent)
-                    indices_to_move = indices_to_move
-                        .into_iter()
-                        .rev()
-                        .take(keep_count)
-                        .rev()
-                        .collect();
-                }
+                && indices_to_move.len() > keep_count
+            {
+                // Keep the last N entries (most recent)
+                indices_to_move = indices_to_move
+                    .into_iter()
+                    .rev()
+                    .take(keep_count)
+                    .rev()
+                    .collect();
+            }
 
             // Collect entries in reverse order to maintain indices
             for &index in indices_to_move.iter().rev() {
@@ -202,25 +207,26 @@ pub fn handle_archive(opts: ArchiveOptions) -> Result<()> {
     let mut moved_count = 0;
     for (section_name, index) in entries_to_move {
         if let Some(entries) = doing_file.sections.get_mut(&section_name)
-            && index < entries.len() {
-                let mut entry = entries.remove(index);
+            && index < entries.len()
+        {
+            let mut entry = entries.remove(index);
 
-                // Add label if requested
-                if opts.label && section_name != "Currently" {
-                    entry
-                        .tags
-                        .insert(format!("from_{}", section_name.to_lowercase()), None);
-                }
+            // Add label if requested
+            if opts.label && section_name != "Currently" {
+                entry
+                    .tags
+                    .insert(format!("from_{}", section_name.to_lowercase()), None);
+            }
 
-                // Add to destination section
-                if let Some(dest_entries) = doing_file.sections.get_mut(&opts.to) {
-                    dest_entries.insert(0, entry);
-                    moved_count += 1;
-                    if !source_sections.contains(&section_name) {
-                        source_sections.push(section_name);
-                    }
+            // Add to destination section
+            if let Some(dest_entries) = doing_file.sections.get_mut(&opts.to) {
+                dest_entries.insert(0, entry);
+                moved_count += 1;
+                if !source_sections.contains(&section_name) {
+                    source_sections.push(section_name);
                 }
             }
+        }
     }
 
     if moved_count > 0 {
