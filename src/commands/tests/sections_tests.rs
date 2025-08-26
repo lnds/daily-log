@@ -3,7 +3,7 @@ mod tests {
     use crate::cli::SectionsAction;
     use crate::commands::sections::handle_sections;
     use crate::storage::parse_taskpaper;
-    use crate::test_utils::test_utils::*;
+    use crate::test_utils::utils::*;
 
     #[test]
     fn test_sections_list_empty() {

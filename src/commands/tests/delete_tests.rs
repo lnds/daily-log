@@ -2,7 +2,7 @@
 mod tests {
     use crate::commands::{DeleteOptions, handle_delete};
     use crate::storage::parse_taskpaper;
-    use crate::test_utils::test_utils::{TestContext, TestEntry};
+    use crate::test_utils::utils::{TestContext, TestEntry};
     use chrono::{Duration, Local};
 
     #[test]

@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::commands::tags::{TagsDisplayOptions, TagsFilterOptions, handle_tags};
-    use crate::test_utils::test_utils::*;
+    use crate::test_utils::utils::*;
 
     #[test]
     fn test_tags_list_all() {

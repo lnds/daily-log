@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::commands::handle_recent;
-    use crate::test_utils::test_utils::{TestContext, TestEntry};
+    use crate::test_utils::utils::{TestContext, TestEntry};
     use chrono::{Duration, Local};
 
     #[test]
@@ -14,7 +14,7 @@ mod tests {
         // Create 15 entries
         for i in 0..15 {
             entries.push(
-                TestEntry::new(&format!("Task {}", i))
+                TestEntry::new(&format!("Task {i}"))
                     .with_timestamp(now - Duration::hours(i as i64)),
             );
         }
