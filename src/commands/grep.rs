@@ -1,5 +1,7 @@
-use crate::display::{DisplayOptions, OutputFormat, TagSort, SortOrder, display_entries};
-use crate::filtering::{FilterOptions, CaseSensitivity, BoolOp, filter_entries, parse_date_filter, parse_date_range};
+use crate::display::{DisplayOptions, OutputFormat, SortOrder, TagSort, display_entries};
+use crate::filtering::{
+    BoolOp, CaseSensitivity, FilterOptions, filter_entries, parse_date_filter, parse_date_range,
+};
 use crate::storage::{Config, parse_taskpaper};
 use std::io::{self, Write};
 
@@ -52,7 +54,9 @@ pub fn handle_grep(
     _config_opts: GrepConfigOptions,
 ) -> color_eyre::Result<()> {
     if action_opts.interactive {
-        return Err(color_eyre::eyre::eyre!("Interactive mode not yet implemented"));
+        return Err(color_eyre::eyre::eyre!(
+            "Interactive mode not yet implemented"
+        ));
     }
 
     let config = Config::load();
@@ -113,8 +117,13 @@ pub fn handle_grep(
 
     // Handle delete mode
     if action_opts.delete {
-        print!("Delete {} matching {}? [y/N] ", 
-            if entries.len() == 1 { "entry" } else { "entries" },
+        print!(
+            "Delete {} matching {}? [y/N] ",
+            if entries.len() == 1 {
+                "entry"
+            } else {
+                "entries"
+            },
             if entries.len() == 1 { "" } else { "entries" }
         );
         io::stdout().flush()?;
@@ -128,18 +137,22 @@ pub fn handle_grep(
         }
 
         // Remove matching entries
-        let uuids_to_delete: std::collections::HashSet<_> = entries.iter()
-            .map(|(_, e)| e.uuid)
-            .collect();
+        let uuids_to_delete: std::collections::HashSet<_> =
+            entries.iter().map(|(_, e)| e.uuid).collect();
 
         for section in doing_file.sections.values_mut() {
             section.retain(|entry| !uuids_to_delete.contains(&entry.uuid));
         }
 
         crate::storage::save_taskpaper(&doing_file)?;
-        println!("Deleted {} {}.", 
-            entries.len(), 
-            if entries.len() == 1 { "entry" } else { "entries" }
+        println!(
+            "Deleted {} {}.",
+            entries.len(),
+            if entries.len() == 1 {
+                "entry"
+            } else {
+                "entries"
+            }
         );
         return Ok(());
     }

@@ -1,7 +1,7 @@
-use crate::display::{DisplayOptions, OutputFormat, TagSort, SortOrder, display_entries};
+use crate::display::{DisplayOptions, OutputFormat, SortOrder, TagSort, display_entries};
 use crate::filtering::{FilterOptions, filter_entries, parse_date_filter, parse_date_range};
 use crate::storage::{Config, parse_taskpaper};
-use chrono::{Local, Duration};
+use chrono::{Duration, Local};
 
 #[derive(Debug)]
 pub struct YesterdayOptions {
@@ -30,12 +30,14 @@ pub fn handle_yesterday(opts: YesterdayOptions) -> color_eyre::Result<()> {
     // Calculate yesterday's date range
     let now = Local::now();
     let yesterday = now - Duration::days(1);
-    let yesterday_start = yesterday.date_naive()
+    let yesterday_start = yesterday
+        .date_naive()
         .and_hms_opt(0, 0, 0)
         .unwrap()
         .and_local_timezone(Local)
         .unwrap();
-    let yesterday_end = yesterday.date_naive()
+    let yesterday_end = yesterday
+        .date_naive()
         .and_hms_opt(23, 59, 59)
         .unwrap()
         .and_local_timezone(Local)
@@ -55,10 +57,11 @@ pub fn handle_yesterday(opts: YesterdayOptions) -> color_eyre::Result<()> {
         // Apply time to yesterday's date
         let time = after_time.time();
         filter_opts.after = Some(
-            yesterday.date_naive()
+            yesterday
+                .date_naive()
                 .and_time(time)
                 .and_local_timezone(Local)
-                .unwrap()
+                .unwrap(),
         );
     }
 
@@ -67,10 +70,11 @@ pub fn handle_yesterday(opts: YesterdayOptions) -> color_eyre::Result<()> {
         // Apply time to yesterday's date
         let time = before_time.time();
         filter_opts.before = Some(
-            yesterday.date_naive()
+            yesterday
+                .date_naive()
                 .and_time(time)
                 .and_local_timezone(Local)
-                .unwrap()
+                .unwrap(),
         );
     }
 
@@ -78,17 +82,19 @@ pub fn handle_yesterday(opts: YesterdayOptions) -> color_eyre::Result<()> {
         // Parse time range and apply to yesterday
         let (from_time, to_time) = parse_date_range(from_str)?;
         filter_opts.after = Some(
-            yesterday.date_naive()
+            yesterday
+                .date_naive()
                 .and_time(from_time.time())
                 .and_local_timezone(Local)
-                .unwrap()
+                .unwrap(),
         );
         if let Some(to) = to_time {
             filter_opts.before = Some(
-                yesterday.date_naive()
+                yesterday
+                    .date_naive()
                     .and_time(to.time())
                     .and_local_timezone(Local)
-                    .unwrap()
+                    .unwrap(),
             );
         }
     }

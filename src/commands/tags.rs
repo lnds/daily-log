@@ -34,7 +34,11 @@ pub fn handle_tags(
 
     // Compile search patterns
     let search_regex = if let Some(ref pattern) = filter_opts.search {
-        Some(compile_search_regex(pattern, &filter_opts.case, filter_opts.exact)?)
+        Some(compile_search_regex(
+            pattern,
+            &filter_opts.case,
+            filter_opts.exact,
+        )?)
     } else {
         None
     };
@@ -51,7 +55,9 @@ pub fn handle_tags(
     let sections_to_process: Vec<&String> = if filter_opts.section.is_empty() {
         doing_file.sections.keys().collect()
     } else {
-        filter_opts.section.iter()
+        filter_opts
+            .section
+            .iter()
             .filter(|s| doing_file.sections.contains_key(*s))
             .collect()
     };
@@ -66,8 +72,9 @@ pub fn handle_tags(
 
                 // Apply search filter
                 if let Some(ref regex) = search_regex {
-                    if !regex.is_match(&entry.description) && 
-                       !entry.note.as_ref().is_some_and(|n| regex.is_match(n)) {
+                    if !regex.is_match(&entry.description)
+                        && !entry.note.as_ref().is_some_and(|n| regex.is_match(n))
+                    {
                         matches = false;
                     }
                 }
@@ -114,7 +121,7 @@ pub fn handle_tags(
 
     // Sort tags
     let mut sorted_tags: Vec<(String, usize)> = tag_counts.into_iter().collect();
-    
+
     match display_opts.sort.as_str() {
         "name" => {
             sorted_tags.sort_by(|a, b| a.0.cmp(&b.0));
@@ -147,18 +154,21 @@ pub fn handle_tags(
     if display_opts.line {
         // Display all tags on one line
         let tag_list: Vec<String> = if display_opts.counts {
-            sorted_tags.iter()
+            sorted_tags
+                .iter()
                 .map(|(tag, count)| format!("@{tag}({count})"))
                 .collect()
         } else {
-            sorted_tags.iter()
+            sorted_tags
+                .iter()
                 .map(|(tag, _)| format!("@{tag}"))
                 .collect()
         };
         println!("{}", tag_list.join(" "));
     } else {
         // Display one tag per line
-        let max_tag_len = sorted_tags.iter()
+        let max_tag_len = sorted_tags
+            .iter()
             .map(|(tag, _)| tag.len())
             .max()
             .unwrap_or(0);
@@ -183,7 +193,7 @@ fn compile_search_regex(pattern: &str, case: &str, exact: bool) -> Result<Regex>
     };
 
     let case_insensitive = parse_smart_case(case, &pattern);
-    
+
     let regex = if case_insensitive {
         Regex::new(&format!("(?i){pattern}"))?
     } else {
@@ -215,7 +225,7 @@ fn parse_smart_case(case: &str, pattern: &str) -> bool {
 
 fn compile_tag_value_queries(val: &[String]) -> Result<HashMap<String, Regex>> {
     let mut queries = HashMap::new();
-    
+
     for query in val {
         // Parse tag value queries in format "tag_name=pattern"
         if let Some(eq_pos) = query.find('=') {
@@ -225,6 +235,6 @@ fn compile_tag_value_queries(val: &[String]) -> Result<HashMap<String, Regex>> {
             queries.insert(tag_name, regex);
         }
     }
-    
+
     Ok(queries)
 }

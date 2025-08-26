@@ -36,22 +36,28 @@ pub fn handle_archive(opts: ArchiveOptions) -> Result<()> {
     let mut source_sections = Vec::new();
 
     // Parse date filters
-    let after_date = opts.after.as_ref().and_then(|s| chrono_english::parse_date_string(
-        s, Local::now(), chrono_english::Dialect::Us
-    ).ok());
-    let before_date = opts.before.as_ref().and_then(|s| chrono_english::parse_date_string(
-        s, Local::now(), chrono_english::Dialect::Us
-    ).ok());
+    let after_date = opts.after.as_ref().and_then(|s| {
+        chrono_english::parse_date_string(s, Local::now(), chrono_english::Dialect::Us).ok()
+    });
+    let before_date = opts.before.as_ref().and_then(|s| {
+        chrono_english::parse_date_string(s, Local::now(), chrono_english::Dialect::Us).ok()
+    });
     let date_range = opts.from.as_ref().and_then(|s| {
         // Simple date range parsing - expects "YYYY-MM-DD to YYYY-MM-DD" format
         let parts: Vec<&str> = s.split(" to ").collect();
         if parts.len() == 2 {
             let start = chrono_english::parse_date_string(
-                parts[0], Local::now(), chrono_english::Dialect::Us
-            ).ok();
+                parts[0],
+                Local::now(),
+                chrono_english::Dialect::Us,
+            )
+            .ok();
             let end = chrono_english::parse_date_string(
-                parts[1], Local::now(), chrono_english::Dialect::Us
-            ).ok();
+                parts[1],
+                Local::now(),
+                chrono_english::Dialect::Us,
+            )
+            .ok();
             match (start, end) {
                 (Some(s), Some(e)) => Some((s, e)),
                 _ => None,
@@ -77,7 +83,9 @@ pub fn handle_archive(opts: ArchiveOptions) -> Result<()> {
         }
     } else {
         // No target specified, process all sections except destination
-        doing_file.sections.keys()
+        doing_file
+            .sections
+            .keys()
             .filter(|k| *k != &opts.to)
             .cloned()
             .collect()
@@ -139,8 +147,9 @@ pub fn handle_archive(opts: ArchiveOptions) -> Result<()> {
 
                 // Apply search filter
                 if let Some(ref regex) = search_regex {
-                    if !regex.is_match(&entry.description) && 
-                       !entry.note.as_ref().is_some_and(|n| regex.is_match(n)) {
+                    if !regex.is_match(&entry.description)
+                        && !entry.note.as_ref().is_some_and(|n| regex.is_match(n))
+                    {
                         matches = false;
                     }
                 }
@@ -179,7 +188,8 @@ pub fn handle_archive(opts: ArchiveOptions) -> Result<()> {
             if let Some(keep_count) = opts.keep {
                 if indices_to_move.len() > keep_count {
                     // Keep the last N entries (most recent)
-                    indices_to_move = indices_to_move.into_iter()
+                    indices_to_move = indices_to_move
+                        .into_iter()
                         .rev()
                         .take(keep_count)
                         .rev()
@@ -200,12 +210,14 @@ pub fn handle_archive(opts: ArchiveOptions) -> Result<()> {
         if let Some(entries) = doing_file.sections.get_mut(&section_name) {
             if index < entries.len() {
                 let mut entry = entries.remove(index);
-                
+
                 // Add label if requested
                 if opts.label && section_name != "Currently" {
-                    entry.tags.insert(format!("from_{}", section_name.to_lowercase()), None);
+                    entry
+                        .tags
+                        .insert(format!("from_{}", section_name.to_lowercase()), None);
                 }
-                
+
                 // Add to destination section
                 if let Some(dest_entries) = doing_file.sections.get_mut(&opts.to) {
                     dest_entries.insert(0, entry);
@@ -220,7 +232,8 @@ pub fn handle_archive(opts: ArchiveOptions) -> Result<()> {
 
     if moved_count > 0 {
         save_taskpaper(&doing_file)?;
-        println!("Moved {} {} from {} to {}", 
+        println!(
+            "Moved {} {} from {} to {}",
             moved_count,
             if moved_count == 1 { "entry" } else { "entries" },
             source_sections.join(", "),
@@ -241,7 +254,7 @@ fn compile_search_regex(pattern: &str, case: &str, exact: bool) -> Result<Regex>
     };
 
     let case_insensitive = parse_smart_case(case, &pattern);
-    
+
     let regex = if case_insensitive {
         Regex::new(&format!("(?i){pattern}"))?
     } else {
@@ -273,7 +286,7 @@ fn parse_smart_case(case: &str, pattern: &str) -> bool {
 
 fn compile_tag_value_queries(val: &[String]) -> Result<HashMap<String, Regex>> {
     let mut queries = HashMap::new();
-    
+
     for query in val {
         // Parse tag value queries in format "tag_name=pattern"
         if let Some(eq_pos) = query.find('=') {
@@ -283,6 +296,6 @@ fn compile_tag_value_queries(val: &[String]) -> Result<HashMap<String, Regex>> {
             queries.insert(tag_name, regex);
         }
     }
-    
+
     Ok(queries)
 }

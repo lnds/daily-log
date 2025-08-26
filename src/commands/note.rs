@@ -27,7 +27,9 @@ pub fn handle_note(
     interactive: bool,
 ) -> color_eyre::Result<()> {
     if interactive {
-        return Err(color_eyre::eyre::eyre!("Interactive mode not yet implemented"));
+        return Err(color_eyre::eyre::eyre!(
+            "Interactive mode not yet implemented"
+        ));
     }
 
     if note_opts.editor {
@@ -36,9 +38,9 @@ pub fn handle_note(
 
     let config = Config::load();
     let doing_file_path = config.doing_file_path();
-    
+
     let mut doing_file = parse_taskpaper(&doing_file_path)?;
-    
+
     // Find the entry to modify
     let entry_to_modify = find_entry_to_modify(
         &doing_file,
@@ -59,11 +61,11 @@ pub fn handle_note(
         let mut lines = Vec::new();
         let stdin = io::stdin();
         let mut empty_line_count = 0;
-        
+
         loop {
             let mut line = String::new();
             stdin.read_line(&mut line)?;
-            
+
             if line.trim().is_empty() {
                 empty_line_count += 1;
                 if empty_line_count >= 2 {
@@ -75,12 +77,12 @@ pub fn handle_note(
                 lines.push(line.trim_end().to_string());
             }
         }
-        
+
         // Remove trailing empty lines
         while lines.last().is_some_and(|l| l.is_empty()) {
             lines.pop();
         }
-        
+
         if !lines.is_empty() {
             Some(lines.join("\n"))
         } else {
@@ -94,7 +96,7 @@ pub fn handle_note(
     let mut modified = false;
     let target_uuid = entry_to_modify.uuid;
     let target_section = entry_to_modify.section.clone();
-    
+
     if let Some(entries) = doing_file.sections.get_mut(&target_section) {
         for entry in entries.iter_mut() {
             if entry.uuid == target_uuid {
@@ -130,11 +132,11 @@ pub fn handle_note(
             }
         }
     }
-    
+
     if !modified {
         return Err(color_eyre::eyre::eyre!("Entry not found"));
     }
-    
+
     save_taskpaper(&doing_file)?;
     Ok(())
 }
@@ -155,7 +157,7 @@ fn find_entry_to_modify(
     } else {
         sections.to_vec()
     };
-    
+
     // Collect all entries from target sections
     let mut all_entries: Vec<Entry> = Vec::new();
     for section in &target_sections {
@@ -165,23 +167,23 @@ fn find_entry_to_modify(
             }
         }
     }
-    
+
     // Sort by timestamp (newest first)
     all_entries.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
-    
+
     // Apply filters
     let mut filtered_entries = all_entries;
-    
+
     // Apply search filter
     if let Some(search_query) = search {
         filtered_entries = filter_by_search(filtered_entries, search_query, exact, case)?;
     }
-    
+
     // Apply tag filter
     if let Some(tag_query) = tag {
         filtered_entries = filter_by_tag(filtered_entries, tag_query)?;
     }
-    
+
     // Apply NOT filter if specified
     if not {
         // Get all entries again
@@ -194,12 +196,13 @@ fn find_entry_to_modify(
             }
         }
         all_entries_again.sort_by(|a, b| b.timestamp.cmp(&a.timestamp));
-        
-        filtered_entries = all_entries_again.into_iter()
+
+        filtered_entries = all_entries_again
+            .into_iter()
             .filter(|entry| !filtered_entries.iter().any(|e| e.uuid == entry.uuid))
             .collect();
     }
-    
+
     // Get the most recent entry after filtering
     filtered_entries
         .into_iter()
@@ -226,18 +229,20 @@ fn filter_by_search(
 
     let filtered = if search_query.starts_with('/') && search_query.ends_with('/') {
         // Regex search
-        let pattern = &search_query[1..search_query.len()-1];
+        let pattern = &search_query[1..search_query.len() - 1];
         let regex = if case_sensitive {
             Regex::new(pattern)?
         } else {
             Regex::new(&format!("(?i){pattern}"))?
         };
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|entry| regex.is_match(&entry.description))
             .collect()
     } else if let Some(query) = search_query.strip_prefix('\'') {
         // Exact match
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|entry| {
                 if case_sensitive {
                     entry.description == query
@@ -248,28 +253,36 @@ fn filter_by_search(
             .collect()
     } else if exact {
         // Exact substring match
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|entry| {
                 if case_sensitive {
                     entry.description.contains(search_query)
                 } else {
-                    entry.description.to_lowercase().contains(&search_query.to_lowercase())
+                    entry
+                        .description
+                        .to_lowercase()
+                        .contains(&search_query.to_lowercase())
                 }
             })
             .collect()
     } else {
         // Regular substring matching
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|entry| {
                 if case_sensitive {
                     entry.description.contains(search_query)
                 } else {
-                    entry.description.to_lowercase().contains(&search_query.to_lowercase())
+                    entry
+                        .description
+                        .to_lowercase()
+                        .contains(&search_query.to_lowercase())
                 }
             })
             .collect()
     };
-    
+
     Ok(filtered)
 }
 
@@ -278,8 +291,9 @@ fn filter_by_tag(
     tag_query: &str,
 ) -> Result<Vec<Entry>, color_eyre::eyre::Error> {
     let tags: Vec<&str> = tag_query.split(',').map(|s| s.trim()).collect();
-    
-    let filtered = entries.into_iter()
+
+    let filtered = entries
+        .into_iter()
         .filter(|entry| {
             // Check if entry has any of the requested tags
             for tag in &tags {
@@ -300,6 +314,6 @@ fn filter_by_tag(
             false
         })
         .collect();
-    
+
     Ok(filtered)
 }

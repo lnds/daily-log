@@ -1,7 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default)]
 pub enum Section {
     #[default]
     Currently,
@@ -41,7 +40,6 @@ impl Section {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -51,10 +49,7 @@ mod tests {
         assert_eq!(Section::parse("Currently:"), Section::Currently);
         assert_eq!(Section::parse("later"), Section::Later);
         assert_eq!(Section::parse("Archive:"), Section::Archive);
-        assert_eq!(
-            Section::parse("Work:"),
-            Section::Custom("Work".to_string())
-        );
+        assert_eq!(Section::parse("Work:"), Section::Custom("Work".to_string()));
     }
 
     #[test]

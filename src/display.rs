@@ -53,7 +53,10 @@ pub enum SortOrder {
     Desc,
 }
 
-pub fn display_entries(entries: &[(String, Entry)], options: &DisplayOptions) -> color_eyre::Result<()> {
+pub fn display_entries(
+    entries: &[(String, Entry)],
+    options: &DisplayOptions,
+) -> color_eyre::Result<()> {
     match options.output_format {
         OutputFormat::Default => display_default(entries, options),
         OutputFormat::Json => display_json(entries),
@@ -65,7 +68,10 @@ pub fn display_entries(entries: &[(String, Entry)], options: &DisplayOptions) ->
     }
 }
 
-fn display_default(entries: &[(String, Entry)], options: &DisplayOptions) -> color_eyre::Result<()> {
+fn display_default(
+    entries: &[(String, Entry)],
+    options: &DisplayOptions,
+) -> color_eyre::Result<()> {
     if entries.is_empty() {
         println!("No entries found");
         return Ok(());
@@ -78,7 +84,6 @@ fn display_default(entries: &[(String, Entry)], options: &DisplayOptions) -> col
     let max_desc_width = 50;
 
     for (section, entry) in entries.iter() {
-
         // Format date
         let date_str = format_date(&entry.timestamp, &now);
         let time_str = entry.timestamp.format("%H:%M").to_string();
@@ -120,7 +125,7 @@ fn display_default(entries: &[(String, Entry)], options: &DisplayOptions) -> col
 
         // Truncate description if too long
         let desc = if desc.len() > max_desc_width {
-            format!("{}...", &desc[..max_desc_width-3])
+            format!("{}...", &desc[..max_desc_width - 3])
         } else {
             desc
         };
@@ -145,15 +150,24 @@ fn display_default(entries: &[(String, Entry)], options: &DisplayOptions) -> col
 
     // Show totals if requested
     if options.totals && !total_duration.is_zero() {
-        println!("\n{:>10} {:>5} ═══════════════════════════════════════════════════════════", "", "");
-        println!("{:>10} {:>5} Total: {}", "", "", format_duration(&total_duration));
+        println!(
+            "\n{:>10} {:>5} ═══════════════════════════════════════════════════════════",
+            "", ""
+        );
+        println!(
+            "{:>10} {:>5} Total: {}",
+            "",
+            "",
+            format_duration(&total_duration)
+        );
     }
 
     Ok(())
 }
 
 fn display_json(entries: &[(String, Entry)]) -> color_eyre::Result<()> {
-    let json_entries: Vec<serde_json::Value> = entries.iter()
+    let json_entries: Vec<serde_json::Value> = entries
+        .iter()
         .map(|(section, entry)| {
             serde_json::json!({
                 "section": section,
@@ -175,7 +189,9 @@ fn display_csv(entries: &[(String, Entry)]) -> color_eyre::Result<()> {
     println!("timestamp,description,section,tags,note,uuid");
 
     for (section, entry) in entries {
-        let tags_str = entry.tags.iter()
+        let tags_str = entry
+            .tags
+            .iter()
             .map(|(k, v)| {
                 if let Some(val) = v {
                     format!("@{k}({val})")
@@ -202,7 +218,10 @@ fn display_csv(entries: &[(String, Entry)]) -> color_eyre::Result<()> {
     Ok(())
 }
 
-fn display_markdown(entries: &[(String, Entry)], options: &DisplayOptions) -> color_eyre::Result<()> {
+fn display_markdown(
+    entries: &[(String, Entry)],
+    options: &DisplayOptions,
+) -> color_eyre::Result<()> {
     println!("# Doing Entries\n");
 
     let mut current_date = None;
@@ -217,7 +236,11 @@ fn display_markdown(entries: &[(String, Entry)], options: &DisplayOptions) -> co
         }
 
         // Time and description
-        print!("- **{}** - {}", entry.timestamp.format("%H:%M"), entry.description);
+        print!(
+            "- **{}** - {}",
+            entry.timestamp.format("%H:%M"),
+            entry.description
+        );
 
         // Tags
         let tags = format_tags(&entry.tags, options);
@@ -244,7 +267,8 @@ fn display_markdown(entries: &[(String, Entry)], options: &DisplayOptions) -> co
 }
 
 fn display_html(entries: &[(String, Entry)], options: &DisplayOptions) -> color_eyre::Result<()> {
-    println!(r#"<!DOCTYPE html>
+    println!(
+        r#"<!DOCTYPE html>
 <html>
 <head>
     <title>Doing Entries</title>
@@ -258,12 +282,14 @@ fn display_html(entries: &[(String, Entry)], options: &DisplayOptions) -> color_
     </style>
 </head>
 <body>
-    <h1>Doing Entries</h1>"#);
+    <h1>Doing Entries</h1>"#
+    );
 
     for (section, entry) in entries {
         println!(r#"    <div class="entry">"#);
-        print!(r#"        <span class="timestamp">{}</span> - {}"#, 
-            entry.timestamp.format("%Y-%m-%d %H:%M"), 
+        print!(
+            r#"        <span class="timestamp">{}</span> - {}"#,
+            entry.timestamp.format("%Y-%m-%d %H:%M"),
             html_escape(&entry.description)
         );
 
@@ -273,7 +299,10 @@ fn display_html(entries: &[(String, Entry)], options: &DisplayOptions) -> color_
         }
 
         if section != "Currently" {
-            print!(r#" <span class="section">[{}]</span>"#, html_escape(section));
+            print!(
+                r#" <span class="section">[{}]</span>"#,
+                html_escape(section)
+            );
         }
 
         if let Some(note) = &entry.note {
@@ -299,8 +328,9 @@ fn display_taskpaper(entries: &[(String, Entry)]) -> color_eyre::Result<()> {
     for (section, entries) in sections {
         println!("{section}:");
         for entry in entries {
-            print!("- {} | {}", 
-                entry.timestamp.format("%Y-%m-%d %H:%M"), 
+            print!(
+                "- {} | {}",
+                entry.timestamp.format("%Y-%m-%d %H:%M"),
                 entry.description
             );
 
@@ -327,7 +357,10 @@ fn display_taskpaper(entries: &[(String, Entry)]) -> color_eyre::Result<()> {
     Ok(())
 }
 
-fn display_timeline(entries: &[(String, Entry)], options: &DisplayOptions) -> color_eyre::Result<()> {
+fn display_timeline(
+    entries: &[(String, Entry)],
+    options: &DisplayOptions,
+) -> color_eyre::Result<()> {
     if entries.is_empty() {
         return Ok(());
     }
@@ -339,8 +372,10 @@ fn display_timeline(entries: &[(String, Entry)], options: &DisplayOptions) -> co
 
         // Add date separator if changed
         if current_date != Some(entry_date) {
-            println!("\n══════════════════ {} ══════════════════", 
-                entry_date.format("%A, %B %d, %Y"));
+            println!(
+                "\n══════════════════ {} ══════════════════",
+                entry_date.format("%A, %B %d, %Y")
+            );
             current_date = Some(entry_date);
         }
 
@@ -398,10 +433,9 @@ fn format_date(timestamp: &DateTime<Local>, now: &DateTime<Local>) -> String {
 
 fn calculate_duration(entry: &Entry) -> (String, Option<chrono::Duration>) {
     if let Some(Some(done_str)) = entry.tags.get("done") {
-        if let Ok(done_time) = chrono::DateTime::parse_from_str(
-            &format!("{done_str} +0000"),
-            "%Y-%m-%d %H:%M %z",
-        ) {
+        if let Ok(done_time) =
+            chrono::DateTime::parse_from_str(&format!("{done_str} +0000"), "%Y-%m-%d %H:%M %z")
+        {
             let duration = done_time.with_timezone(&Local) - entry.timestamp;
             let duration_str = format!(" ({})", format_duration(&duration));
             return (duration_str, Some(duration));
@@ -426,9 +460,8 @@ fn format_duration(duration: &chrono::Duration) -> String {
 }
 
 fn format_tags(tags: &HashMap<String, Option<String>>, options: &DisplayOptions) -> String {
-    let mut tag_vec: Vec<(String, Option<String>)> = tags.iter()
-        .map(|(k, v)| (k.clone(), v.clone()))
-        .collect();
+    let mut tag_vec: Vec<(String, Option<String>)> =
+        tags.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
 
     // Sort tags
     match options.tag_sort {
@@ -448,7 +481,8 @@ fn format_tags(tags: &HashMap<String, Option<String>>, options: &DisplayOptions)
         }
     }
 
-    tag_vec.iter()
+    tag_vec
+        .iter()
         .map(|(tag, value)| {
             if let Some(v) = value {
                 format!("@{tag}({v})")

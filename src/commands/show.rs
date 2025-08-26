@@ -1,5 +1,7 @@
-use crate::display::{DisplayOptions, OutputFormat, TagSort, SortOrder, display_entries};
-use crate::filtering::{FilterOptions, CaseSensitivity, BoolOp, filter_entries, parse_date_filter, parse_date_range};
+use crate::display::{DisplayOptions, OutputFormat, SortOrder, TagSort, display_entries};
+use crate::filtering::{
+    BoolOp, CaseSensitivity, FilterOptions, filter_entries, parse_date_filter, parse_date_range,
+};
 use crate::storage::{Config, parse_taskpaper};
 
 #[derive(Debug)]
@@ -55,7 +57,9 @@ pub fn handle_show(
     _config_opts: ShowConfigOptions,
 ) -> color_eyre::Result<()> {
     if ui_opts.interactive {
-        return Err(color_eyre::eyre::eyre!("Interactive mode not yet implemented"));
+        return Err(color_eyre::eyre::eyre!(
+            "Interactive mode not yet implemented"
+        ));
     }
 
     if ui_opts.menu {

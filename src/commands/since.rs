@@ -1,5 +1,5 @@
-use crate::display::{DisplayOptions, OutputFormat, TagSort, SortOrder, display_entries};
-use crate::filtering::{FilterOptions, CaseSensitivity, BoolOp, filter_entries, parse_date_filter};
+use crate::display::{DisplayOptions, OutputFormat, SortOrder, TagSort, display_entries};
+use crate::filtering::{BoolOp, CaseSensitivity, FilterOptions, filter_entries, parse_date_filter};
 use crate::storage::{Config, parse_taskpaper};
 
 #[derive(Debug)]

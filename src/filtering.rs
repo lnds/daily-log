@@ -1,6 +1,6 @@
-use crate::models::{Entry, DoingFile};
+use crate::models::{DoingFile, Entry};
 use chrono::{DateTime, Local, NaiveTime};
-use chrono_english::{parse_date_string, Dialect};
+use chrono_english::{Dialect, parse_date_string};
 use regex::Regex;
 use std::collections::HashSet;
 
@@ -64,7 +64,9 @@ pub fn filter_entries(
     let target_sections: Vec<&String> = if options.sections.is_empty() {
         doing_file.sections.keys().collect()
     } else {
-        options.sections.iter()
+        options
+            .sections
+            .iter()
             .filter(|s| doing_file.sections.contains_key(*s))
             .collect()
     };
@@ -116,9 +118,7 @@ pub fn filter_entries(
 
     // Apply NOT filter if specified
     if options.not {
-        let filtered_uuids: HashSet<_> = filtered.iter()
-            .map(|(_, e)| e.uuid)
-            .collect();
+        let filtered_uuids: HashSet<_> = filtered.iter().map(|(_, e)| e.uuid).collect();
 
         // Re-collect all entries
         let mut all_entries: Vec<(String, Entry)> = Vec::new();
@@ -130,7 +130,8 @@ pub fn filter_entries(
             }
         }
 
-        filtered = all_entries.into_iter()
+        filtered = all_entries
+            .into_iter()
             .filter(|(_, entry)| !filtered_uuids.contains(&entry.uuid))
             .collect();
     }
@@ -138,18 +139,17 @@ pub fn filter_entries(
     Ok(filtered)
 }
 
-fn filter_by_after(
-    entries: Vec<(String, Entry)>,
-    after: &DateTime<Local>,
-) -> Vec<(String, Entry)> {
+fn filter_by_after(entries: Vec<(String, Entry)>, after: &DateTime<Local>) -> Vec<(String, Entry)> {
     // If after only has time component, filter by time of day
     if after.date_naive() == Local::now().date_naive() {
         let time = after.time();
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|(_, entry)| entry.timestamp.time() >= time)
             .collect()
     } else {
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|(_, entry)| entry.timestamp >= *after)
             .collect()
     }
@@ -162,11 +162,13 @@ fn filter_by_before(
     // If before only has time component, filter by time of day
     if before.date_naive() == Local::now().date_naive() {
         let time = before.time();
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|(_, entry)| entry.timestamp.time() <= time)
             .collect()
     } else {
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|(_, entry)| entry.timestamp <= *before)
             .collect()
     }
@@ -178,11 +180,13 @@ fn filter_by_range(
     to: Option<&DateTime<Local>>,
 ) -> Vec<(String, Entry)> {
     if let Some(to) = to {
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|(_, entry)| entry.timestamp >= *from && entry.timestamp <= *to)
             .collect()
     } else {
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|(_, entry)| entry.timestamp >= *from)
             .collect()
     }
@@ -203,16 +207,17 @@ fn filter_by_search(
 
     let filtered = if search_query.starts_with('/') && search_query.ends_with('/') {
         // Regex search
-        let pattern = &search_query[1..search_query.len()-1];
+        let pattern = &search_query[1..search_query.len() - 1];
         let regex = if case_sensitive {
             Regex::new(pattern)?
         } else {
             Regex::new(&format!("(?i){pattern}"))?
         };
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|(_, entry)| {
-                regex.is_match(&entry.description) ||
-                entry.note.as_ref().is_some_and(|n| regex.is_match(n))
+                regex.is_match(&entry.description)
+                    || entry.note.as_ref().is_some_and(|n| regex.is_match(n))
             })
             .collect()
     } else if search_query.starts_with('\'') || exact {
@@ -222,7 +227,8 @@ fn filter_by_search(
         } else {
             search_query
         };
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|(_, entry)| {
                 let desc_match = if case_sensitive {
                     entry.description == query
@@ -241,12 +247,16 @@ fn filter_by_search(
             .collect()
     } else {
         // Fuzzy/substring matching
-        entries.into_iter()
+        entries
+            .into_iter()
             .filter(|(_, entry)| {
                 let desc_match = if case_sensitive {
                     entry.description.contains(search_query)
                 } else {
-                    entry.description.to_lowercase().contains(&search_query.to_lowercase())
+                    entry
+                        .description
+                        .to_lowercase()
+                        .contains(&search_query.to_lowercase())
                 };
                 let note_match = entry.note.as_ref().is_some_and(|n| {
                     if case_sensitive {
@@ -288,19 +298,18 @@ fn filter_by_tags(
                 }
             }
 
-            entries.into_iter()
+            entries
+                .into_iter()
                 .filter(|(_, entry)| {
                     // Must have all required tags
-                    let has_required = required_tags.iter()
-                        .all(|tag| has_tag(entry, tag));
+                    let has_required = required_tags.iter().all(|tag| has_tag(entry, tag));
 
                     // Must not have any excluded tags
-                    let no_excluded = excluded_tags.iter()
-                        .all(|tag| !has_tag(entry, tag));
+                    let no_excluded = excluded_tags.iter().all(|tag| !has_tag(entry, tag));
 
                     // Must have at least one normal tag (if any specified)
-                    let has_normal = normal_tags.is_empty() || 
-                        normal_tags.iter().any(|tag| has_tag(entry, tag));
+                    let has_normal =
+                        normal_tags.is_empty() || normal_tags.iter().any(|tag| has_tag(entry, tag));
 
                     has_required && no_excluded && has_normal
                 })
@@ -308,7 +317,8 @@ fn filter_by_tags(
         }
         BoolOp::And => {
             // Must have all tags
-            entries.into_iter()
+            entries
+                .into_iter()
                 .filter(|(_, entry)| {
                     tags.iter().all(|tag| {
                         let tag_name = tag.trim_start_matches('@');
@@ -319,7 +329,8 @@ fn filter_by_tags(
         }
         BoolOp::Or => {
             // Must have at least one tag
-            entries.into_iter()
+            entries
+                .into_iter()
                 .filter(|(_, entry)| {
                     tags.iter().any(|tag| {
                         let tag_name = tag.trim_start_matches('@');
@@ -330,7 +341,8 @@ fn filter_by_tags(
         }
         BoolOp::Not => {
             // Must not have any of the tags
-            entries.into_iter()
+            entries
+                .into_iter()
                 .filter(|(_, entry)| {
                     !tags.iter().any(|tag| {
                         let tag_name = tag.trim_start_matches('@');
@@ -413,18 +425,20 @@ pub fn parse_date_filter(date_str: &str) -> color_eyre::Result<DateTime<Local>> 
         .map_err(|e| color_eyre::eyre::eyre!("Failed to parse date: {}", e))
 }
 
-pub fn parse_date_range(range_str: &str) -> color_eyre::Result<(DateTime<Local>, Option<DateTime<Local>>)> {
+pub fn parse_date_range(
+    range_str: &str,
+) -> color_eyre::Result<(DateTime<Local>, Option<DateTime<Local>>)> {
     // Split on " to ", " through ", or " - "
     let separators = [" to ", " through ", " - "];
-    
+
     for sep in &separators {
         if let Some(pos) = range_str.find(sep) {
             let start_str = &range_str[..pos];
             let end_str = &range_str[pos + sep.len()..];
-            
+
             let start = parse_date_filter(start_str)?;
             let end = parse_date_filter(end_str)?;
-            
+
             return Ok((start, Some(end)));
         }
     }
