@@ -50,6 +50,38 @@ impl EntryService {
         }
     }
     
+    /// Update an entry's description by its UUID
+    pub fn update_entry_description(uuid: &Uuid, new_description: String) -> Result<Entry> {
+        let config = Config::load();
+        let doing_file_path = config.doing_file_path();
+        
+        let mut doing_file = parse_taskpaper(&doing_file_path)?;
+        
+        // Find and update the entry
+        let mut found_entry = None;
+        
+        for (_section_name, entries) in doing_file.sections.iter_mut() {
+            for entry in entries.iter_mut() {
+                if &entry.uuid == uuid {
+                    entry.description = new_description.clone();
+                    found_entry = Some(entry.clone());
+                    break;
+                }
+            }
+            if found_entry.is_some() {
+                break;
+            }
+        }
+        
+        if let Some(updated_entry) = found_entry {
+            // Save the file
+            save_taskpaper(&doing_file)?;
+            Ok(updated_entry)
+        } else {
+            Err(eyre!("Entry with UUID {} not found", uuid))
+        }
+    }
+    
     /// Delete an entry by its UUID
     pub fn delete_by_uuid(uuid: &Uuid) -> Result<()> {
         let config = Config::load();
