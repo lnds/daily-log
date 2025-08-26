@@ -17,6 +17,7 @@ use chrono::{Local, Duration, TimeZone};
 pub enum AppMode {
     Normal,
     EditEntry,
+    EditNote,
 }
 
 /// The main application which holds the state and logic of the application.
@@ -36,8 +37,10 @@ pub struct App {
     section_filter: Option<String>,
     /// Current mode of the app
     mode: AppMode,
-    /// Text area for editing
+    /// Text area for editing entries
     edit_textarea: TextArea<'static>,
+    /// Text area for editing notes  
+    note_textarea: TextArea<'static>,
 }
 
 impl Default for App {
@@ -63,6 +66,7 @@ impl App {
             section_filter: section,
             mode: AppMode::Normal,
             edit_textarea: TextArea::default(),
+            note_textarea: TextArea::default(),
         };
         app.load_entries();
         app
@@ -96,6 +100,10 @@ impl App {
         match self.mode {
             AppMode::EditEntry => {
                 self.render_edit_mode(frame);
+                return;
+            }
+            AppMode::EditNote => {
+                self.render_note_mode(frame);
                 return;
             }
             AppMode::Normal => {
@@ -207,7 +215,7 @@ impl App {
         let help_text = if let Some(error) = &self.error {
             format!("Error: {error} | Press 'q' to quit, 'r' to reload")
         } else {
-            "q: quit | ↑/↓: navigate | Enter: details | e: edit | d: delete | Space: toggle done | r: reload".to_string()
+            "q: quit | ↑/↓: navigate | Enter: details | e: edit | n: note | d: delete | Space: toggle done | r: reload".to_string()
         };
         let help = Paragraph::new(help_text)
             .style(Style::default().fg(if self.error.is_some() { Color::Red } else { Color::Gray }))
@@ -316,7 +324,7 @@ impl App {
         }
 
         // Help bar
-        let help = Paragraph::new("Press e to edit, Esc or Enter to return to list view")
+        let help = Paragraph::new("Press e to edit, n to edit note, Esc or Enter to return to list view")
             .style(Style::default().fg(Color::Gray))
             .block(Block::default().borders(Borders::ALL));
         frame.render_widget(help, chunks[2]);
@@ -346,6 +354,38 @@ impl App {
                 .title("Description")
         );
         frame.render_widget(&self.edit_textarea, chunks[1]);
+
+        // Help bar
+        let help = Paragraph::new("Press Ctrl+S to save, Esc to cancel")
+            .style(Style::default().fg(Color::Gray))
+            .block(Block::default().borders(Borders::ALL));
+        frame.render_widget(help, chunks[2]);
+    }
+
+    /// Render note edit mode for editing an entry's note
+    fn render_note_mode(&mut self, frame: &mut Frame) {
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(1)
+            .constraints([Constraint::Length(3), Constraint::Min(0), Constraint::Length(3)])
+            .split(frame.area());
+
+        // Title
+        let title = Paragraph::new("Edit Entry Note")
+            .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD))
+            .block(Block::default().borders(Borders::ALL));
+        frame.render_widget(title, chunks[0]);
+
+        // Text area for editing note
+        self.note_textarea.set_style(Style::default().fg(Color::White));
+        self.note_textarea.set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
+        self.note_textarea.set_cursor_line_style(Style::default());
+        self.note_textarea.set_block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Note (leave empty to remove note)")
+        );
+        frame.render_widget(&self.note_textarea, chunks[1]);
 
         // Help bar
         let help = Paragraph::new("Press Ctrl+S to save, Esc to cancel")
@@ -391,6 +431,26 @@ impl App {
             return;
         }
 
+        // Handle note edit mode keys
+        if self.mode == AppMode::EditNote {
+            match (key.modifiers, key.code) {
+                (_, KeyCode::Esc) => {
+                    // Cancel editing
+                    self.mode = AppMode::Normal;
+                }
+                (KeyModifiers::CONTROL, KeyCode::Char('s') | KeyCode::Char('S')) => {
+                    // Save changes
+                    self.save_note();
+                }
+                _ => {
+                    // Pass other keys to the text area
+                    let input = Input::from(key);
+                    self.note_textarea.input(input);
+                }
+            }
+            return;
+        }
+
         // Handle detail view keys separately
         if self.show_detail {
             match (key.modifiers, key.code) {
@@ -401,6 +461,11 @@ impl App {
                     // Edit entry from detail view
                     self.show_detail = false;
                     self.enter_edit_mode();
+                }
+                (_, KeyCode::Char('n')) => {
+                    // Edit note from detail view
+                    self.show_detail = false;
+                    self.enter_note_mode();
                 }
                 (_, KeyCode::Char('q'))
                 | (KeyModifiers::CONTROL, KeyCode::Char('c') | KeyCode::Char('C')) => self.quit(),
@@ -450,6 +515,12 @@ impl App {
                 // Edit selected entry
                 if self.selected < self.entries.len() {
                     self.enter_edit_mode();
+                }
+            }
+            (_, KeyCode::Char('n')) => {
+                // Edit note of selected entry
+                if self.selected < self.entries.len() {
+                    self.enter_note_mode();
                 }
             }
             _ => {}
@@ -533,6 +604,52 @@ impl App {
                 }
                 Err(e) => {
                     self.error = Some(format!("Failed to update entry: {e}"));
+                }
+            }
+        }
+    }
+
+    /// Enter note edit mode for the selected entry
+    fn enter_note_mode(&mut self) {
+        if let Some(entry) = self.entries.get(self.selected) {
+            // Initialize the text area with the current note or empty if no note
+            let note_lines = if let Some(note) = &entry.note {
+                note.lines().map(|s| s.to_string()).collect()
+            } else {
+                vec!["".to_string()]
+            };
+            self.note_textarea = TextArea::new(note_lines);
+            self.note_textarea.move_cursor(tui_textarea::CursorMove::End);
+            self.mode = AppMode::EditNote;
+        }
+    }
+
+    /// Save the edited note
+    fn save_note(&mut self) {
+        if let Some(entry) = self.entries.get(self.selected) {
+            let new_note_text = self.note_textarea.lines().join("\n").trim().to_string();
+            
+            // Convert empty string to None (remove note)
+            let new_note = if new_note_text.is_empty() {
+                None
+            } else {
+                Some(new_note_text)
+            };
+            
+            // Use the service layer to update the entry note
+            match EntryService::update_entry_note(&entry.uuid, new_note) {
+                Ok(_updated_entry) => {
+                    // Reload entries from file to ensure consistency
+                    self.load_entries();
+                    // Make sure selection is still valid
+                    if self.selected >= self.entries.len() && !self.entries.is_empty() {
+                        self.selected = self.entries.len() - 1;
+                    }
+                    self.mode = AppMode::Normal;
+                    self.error = None;
+                }
+                Err(e) => {
+                    self.error = Some(format!("Failed to update note: {e}"));
                 }
             }
         }
