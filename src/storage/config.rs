@@ -10,13 +10,11 @@ impl Config {
     pub fn load() -> Self {
         // Check for test config using thread ID
         let test_var = format!("DOING_TEST_CONFIG_{:?}", std::thread::current().id());
-        if let Ok(config_path) = std::env::var(&test_var) {
-            if let Ok(content) = std::fs::read_to_string(&config_path) {
-                if let Ok(config) = serde_json::from_str(&content) {
+        if let Ok(config_path) = std::env::var(&test_var)
+            && let Ok(content) = std::fs::read_to_string(&config_path)
+                && let Ok(config) = serde_json::from_str(&content) {
                     return config;
                 }
-            }
-        }
 
         Self::default()
     }

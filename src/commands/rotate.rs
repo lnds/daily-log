@@ -91,20 +91,18 @@ pub fn handle_rotate(opts: RotateOptions) -> Result<()> {
                 }
 
                 // Apply before date filter
-                if let Some(before) = &before_date {
-                    if entry.timestamp >= *before {
+                if let Some(before) = &before_date
+                    && entry.timestamp >= *before {
                         matches = false;
                     }
-                }
 
                 // Apply search filter
-                if let Some(ref regex) = search_regex {
-                    if !regex.is_match(&entry.description)
+                if let Some(ref regex) = search_regex
+                    && !regex.is_match(&entry.description)
                         && !entry.note.as_ref().is_some_and(|n| regex.is_match(n))
                     {
                         matches = false;
                     }
-                }
 
                 // Apply tag filter
                 if let Some(ref regex) = tag_regex {
@@ -137,12 +135,11 @@ pub fn handle_rotate(opts: RotateOptions) -> Result<()> {
             }
 
             // Apply keep filter - keep only the oldest entries
-            if let Some(keep_count) = opts.keep {
-                if indices_to_rotate.len() > keep_count {
+            if let Some(keep_count) = opts.keep
+                && indices_to_rotate.len() > keep_count {
                     // Keep the first N entries (oldest)
                     indices_to_rotate.truncate(keep_count);
                 }
-            }
 
             // Collect entries in reverse order to maintain indices
             for &index in indices_to_rotate.iter().rev() {
@@ -156,8 +153,8 @@ pub fn handle_rotate(opts: RotateOptions) -> Result<()> {
     let mut rotated_entries = Vec::new();
 
     for (section_name, index) in entries_to_rotate {
-        if let Some(entries) = doing_file.sections.get_mut(&section_name) {
-            if index < entries.len() {
+        if let Some(entries) = doing_file.sections.get_mut(&section_name)
+            && index < entries.len() {
                 let entry = entries.remove(index);
 
                 // Add section tag if not from Archive
@@ -171,7 +168,6 @@ pub fn handle_rotate(opts: RotateOptions) -> Result<()> {
                 rotated_entries.push(entry_to_archive);
                 rotated_count += 1;
             }
-        }
     }
 
     // Add rotated entries to archive file

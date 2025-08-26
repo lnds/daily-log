@@ -120,8 +120,8 @@ pub fn handle_done(opts: DoneOptions) -> color_eyre::Result<()> {
                     && let Some((time_str, desc, _done_time_str)) = &entry_info
                 {
                     // Find and remove from current section
-                    if let Some(entries) = doing_file.sections.get_mut(target_section) {
-                        if let Some(pos) = entries.iter().position(|e| {
+                    if let Some(entries) = doing_file.sections.get_mut(target_section)
+                        && let Some(pos) = entries.iter().position(|e| {
                             e.timestamp.format("%Y-%m-%d %H:%M").to_string() == *time_str
                                 && e.description == *desc
                         }) {
@@ -135,7 +135,6 @@ pub fn handle_done(opts: DoneOptions) -> color_eyre::Result<()> {
                                 .or_insert_with(Vec::new)
                                 .push(entry);
                         }
-                    }
                 }
 
                 save_taskpaper(&doing_file)?;
@@ -385,13 +384,12 @@ fn calculate_times(
 
 fn parse_duration(duration_str: &str) -> Result<Duration, color_eyre::eyre::Error> {
     // Try to parse as HH:MM
-    if let Ok(re) = Regex::new(r"^(\d+):(\d+)$") {
-        if let Some(captures) = re.captures(duration_str) {
+    if let Ok(re) = Regex::new(r"^(\d+):(\d+)$")
+        && let Some(captures) = re.captures(duration_str) {
             let hours: i64 = captures[1].parse()?;
             let minutes: i64 = captures[2].parse()?;
             return Ok(Duration::hours(hours) + Duration::minutes(minutes));
         }
-    }
 
     // Try to parse compound durations like 2h30m
     let mut total_duration = Duration::zero();

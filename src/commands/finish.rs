@@ -392,17 +392,16 @@ fn calculate_done_time(
 
 fn parse_duration(duration_str: &str) -> Result<Duration, color_eyre::eyre::Error> {
     // Try to parse as HH:MM
-    if let Ok(re) = Regex::new(r"^(\d+):(\d+)$") {
-        if let Some(captures) = re.captures(duration_str) {
+    if let Ok(re) = Regex::new(r"^(\d+):(\d+)$")
+        && let Some(captures) = re.captures(duration_str) {
             let hours: i64 = captures[1].parse()?;
             let minutes: i64 = captures[2].parse()?;
             return Ok(Duration::hours(hours) + Duration::minutes(minutes));
         }
-    }
 
     // Try to parse as XX[mhd]
-    if let Ok(re) = Regex::new(r"^(\d+)([mhd])$") {
-        if let Some(captures) = re.captures(duration_str) {
+    if let Ok(re) = Regex::new(r"^(\d+)([mhd])$")
+        && let Some(captures) = re.captures(duration_str) {
             let value: i64 = captures[1].parse()?;
             let unit = &captures[2];
 
@@ -413,7 +412,6 @@ fn parse_duration(duration_str: &str) -> Result<Duration, color_eyre::eyre::Erro
                 _ => Err(color_eyre::eyre::eyre!("Invalid duration unit: {}", unit)),
             };
         }
-    }
 
     Err(color_eyre::eyre::eyre!(
         "Invalid duration format: {}. Use XX[mhd] or HH:MM",
