@@ -300,7 +300,7 @@ fn main() -> color_eyre::Result<()> {
                     not,
                 },
                 commands::NoteOptions {
-                    note: note,
+                    note,
                     ask,
                     editor,
                     remove,
