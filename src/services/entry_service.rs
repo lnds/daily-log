@@ -1,6 +1,6 @@
 use crate::models::Entry;
 use crate::storage::{Config, parse_taskpaper, save_taskpaper};
-use chrono::Local;
+use chrono::{DateTime, Local};
 use color_eyre::Result;
 use color_eyre::eyre::eyre;
 use uuid::Uuid;
@@ -199,5 +199,51 @@ impl EntryService {
         entries.truncate(limit);
 
         Ok(entries)
+    }
+
+    /// Update an entry's timestamp and done status by its UUID
+    pub fn update_entry_timestamp(
+        uuid: &Uuid,
+        new_timestamp: DateTime<Local>,
+        new_done: Option<String>,
+    ) -> Result<Entry> {
+        let config = Config::load();
+        let doing_file_path = config.doing_file_path();
+
+        let mut doing_file = parse_taskpaper(&doing_file_path)?;
+
+        // Find and update the entry
+        let mut found_entry = None;
+
+        for (_section_name, entries) in doing_file.sections.iter_mut() {
+            for entry in entries.iter_mut() {
+                if &entry.uuid == uuid {
+                    entry.timestamp = new_timestamp;
+
+                    // Update done status
+                    if let Some(ref done_time) = new_done {
+                        entry
+                            .tags
+                            .insert("done".to_string(), Some(done_time.clone()));
+                    } else {
+                        entry.tags.remove("done");
+                    }
+
+                    found_entry = Some(entry.clone());
+                    break;
+                }
+            }
+            if found_entry.is_some() {
+                break;
+            }
+        }
+
+        if let Some(updated_entry) = found_entry {
+            // Save the file
+            save_taskpaper(&doing_file)?;
+            Ok(updated_entry)
+        } else {
+            Err(eyre!("Entry with UUID {} not found", uuid))
+        }
     }
 }

@@ -18,6 +18,7 @@ pub enum AppMode {
     Normal,
     EditEntry,
     EditNote,
+    EditTimestamp,
 }
 
 /// The main application which holds the state and logic of the application.
@@ -41,6 +42,12 @@ pub struct App {
     edit_textarea: TextArea<'static>,
     /// Text area for editing notes  
     note_textarea: TextArea<'static>,
+    /// Text area for editing timestamp
+    timestamp_textarea: TextArea<'static>,
+    /// Text area for editing done timestamp
+    done_timestamp_textarea: TextArea<'static>,
+    /// Original done flag state when entering timestamp edit mode
+    original_done_state: bool,
 }
 
 impl Default for App {
@@ -67,6 +74,9 @@ impl App {
             mode: AppMode::Normal,
             edit_textarea: TextArea::default(),
             note_textarea: TextArea::default(),
+            timestamp_textarea: TextArea::default(),
+            done_timestamp_textarea: TextArea::default(),
+            original_done_state: false,
         };
         app.load_entries();
         app
@@ -104,6 +114,10 @@ impl App {
             }
             AppMode::EditNote => {
                 self.render_note_mode(frame);
+                return;
+            }
+            AppMode::EditTimestamp => {
+                self.render_timestamp_mode(frame);
                 return;
             }
             AppMode::Normal => {
@@ -233,7 +247,7 @@ impl App {
         let help_text = if let Some(error) = &self.error {
             format!("Error: {error} | Press 'q' to quit, 'r' to reload")
         } else {
-            "q: quit | ↑/↓: navigate | Enter: details | e: edit | n: note | d: delete | Space: toggle done | r: reload".to_string()
+            "q: quit | ↑/↓: navigate | Enter: details | e: edit | n: note | t: time | d: delete | Space: toggle done | r: reload".to_string()
         };
         let help = Paragraph::new(help_text)
             .style(Style::default().fg(if self.error.is_some() {
@@ -368,10 +382,11 @@ impl App {
         }
 
         // Help bar
-        let help =
-            Paragraph::new("Press e to edit, n to edit note, Esc or Enter to return to list view")
-                .style(Style::default().fg(Color::Gray))
-                .block(Block::default().borders(Borders::ALL));
+        let help = Paragraph::new(
+            "Press e to edit, n to edit note, t to edit time, Esc or Enter to return to list view",
+        )
+        .style(Style::default().fg(Color::Gray))
+        .block(Block::default().borders(Borders::ALL));
         frame.render_widget(help, chunks[2]);
     }
 
@@ -456,6 +471,93 @@ impl App {
         frame.render_widget(help, chunks[2]);
     }
 
+    /// Render timestamp edit mode
+    fn render_timestamp_mode(&mut self, frame: &mut Frame) {
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .margin(1)
+            .constraints([
+                Constraint::Length(3),
+                Constraint::Length(5),
+                Constraint::Length(5),
+                Constraint::Length(3),
+                Constraint::Min(0),
+                Constraint::Length(3),
+            ])
+            .split(frame.area());
+
+        // Title
+        let title = Paragraph::new("Edit Timestamp and Duration")
+            .style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )
+            .block(Block::default().borders(Borders::ALL));
+        frame.render_widget(title, chunks[0]);
+
+        // Entry info (read-only display)
+        if let Some(entry) = self.entries.get(self.selected) {
+            let entry_info = Paragraph::new(format!("Entry: {}", entry.description))
+                .style(Style::default().fg(Color::Gray))
+                .block(Block::default().borders(Borders::ALL).title("Entry"));
+            frame.render_widget(entry_info, chunks[1]);
+        }
+
+        // Start timestamp field
+        self.timestamp_textarea
+            .set_style(Style::default().fg(Color::White));
+        self.timestamp_textarea
+            .set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
+        self.timestamp_textarea
+            .set_cursor_line_style(Style::default());
+        self.timestamp_textarea.set_block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Start Time (YYYY-MM-DD HH:MM)"),
+        );
+        frame.render_widget(&self.timestamp_textarea, chunks[2]);
+
+        // Done timestamp field
+        self.done_timestamp_textarea
+            .set_style(Style::default().fg(Color::White));
+        self.done_timestamp_textarea
+            .set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
+        self.done_timestamp_textarea
+            .set_cursor_line_style(Style::default());
+        self.done_timestamp_textarea.set_block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title("Done Time (YYYY-MM-DD HH:MM) - Leave empty to remove @done"),
+        );
+        frame.render_widget(&self.done_timestamp_textarea, chunks[3]);
+
+        // Status display
+        if let Some(entry) = self.entries.get(self.selected) {
+            let is_done = entry.is_done();
+            let status_text = if is_done {
+                "Status: ✓ DONE"
+            } else {
+                "Status: ○ NOT DONE"
+            };
+            let status = Paragraph::new(status_text)
+                .style(Style::default().fg(if is_done { Color::Green } else { Color::Yellow }))
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("Current Status"),
+                );
+            frame.render_widget(status, chunks[4]);
+        }
+
+        // Help bar
+        let help =
+            Paragraph::new("Ctrl+S: save | Esc: cancel | d: toggle done flag | Tab: switch fields")
+                .style(Style::default().fg(Color::Gray))
+                .block(Block::default().borders(Borders::ALL));
+        frame.render_widget(help, chunks[5]);
+    }
+
     /// Reads the crossterm events and updates the state of [`App`].
     ///
     /// If your application needs to perform work in between handling events, you can use the
@@ -513,6 +615,33 @@ impl App {
             return;
         }
 
+        // Handle timestamp edit mode keys
+        if self.mode == AppMode::EditTimestamp {
+            match (key.modifiers, key.code) {
+                (_, KeyCode::Esc) => {
+                    // Cancel editing
+                    self.mode = AppMode::Normal;
+                }
+                (KeyModifiers::CONTROL, KeyCode::Char('s') | KeyCode::Char('S')) => {
+                    // Save changes
+                    self.save_timestamp();
+                }
+                (_, KeyCode::Tab) => {
+                    // Switch between timestamp and done timestamp fields
+                    // This will be handled in the render function
+                }
+                (_, KeyCode::Char('d')) => {
+                    // Toggle done flag
+                    self.toggle_done_in_timestamp_mode();
+                }
+                _ => {
+                    // Handle text input for timestamp fields
+                    self.handle_timestamp_input(key);
+                }
+            }
+            return;
+        }
+
         // Handle detail view keys separately
         if self.show_detail {
             match (key.modifiers, key.code) {
@@ -528,6 +657,11 @@ impl App {
                     // Edit note from detail view
                     self.show_detail = false;
                     self.enter_note_mode();
+                }
+                (_, KeyCode::Char('t')) => {
+                    // Edit timestamp from detail view
+                    self.show_detail = false;
+                    self.enter_timestamp_mode();
                 }
                 (_, KeyCode::Char('q'))
                 | (KeyModifiers::CONTROL, KeyCode::Char('c') | KeyCode::Char('C')) => self.quit(),
@@ -583,6 +717,12 @@ impl App {
                 // Edit note of selected entry
                 if self.selected < self.entries.len() {
                     self.enter_note_mode();
+                }
+            }
+            (_, KeyCode::Char('t')) => {
+                // Edit timestamp of selected entry
+                if self.selected < self.entries.len() {
+                    self.enter_timestamp_mode();
                 }
             }
             _ => {}
@@ -714,6 +854,122 @@ impl App {
                 }
                 Err(e) => {
                     self.error = Some(format!("Failed to update note: {e}"));
+                }
+            }
+        }
+    }
+
+    /// Enter timestamp edit mode for the selected entry
+    fn enter_timestamp_mode(&mut self) {
+        if let Some(entry) = self.entries.get(self.selected) {
+            // Initialize timestamp textarea with current timestamp
+            let timestamp_str = entry.timestamp.format("%Y-%m-%d %H:%M").to_string();
+            self.timestamp_textarea = TextArea::new(vec![timestamp_str]);
+            self.timestamp_textarea
+                .move_cursor(tui_textarea::CursorMove::End);
+
+            // Initialize done timestamp textarea
+            let done_str = if let Some(Some(done_time)) = entry.tags.get("done") {
+                done_time.clone()
+            } else {
+                "".to_string()
+            };
+            self.done_timestamp_textarea = TextArea::new(vec![done_str]);
+
+            // Store original done state
+            self.original_done_state = entry.is_done();
+
+            self.mode = AppMode::EditTimestamp;
+        }
+    }
+
+    /// Handle text input for timestamp fields
+    fn handle_timestamp_input(&mut self, key: KeyEvent) {
+        // For simplicity, we'll always route input to the start timestamp field
+        // In a more sophisticated UI, we'd track which field is focused
+        let input = Input::from(key);
+        self.timestamp_textarea.input(input);
+    }
+
+    /// Toggle done flag in timestamp mode
+    fn toggle_done_in_timestamp_mode(&mut self) {
+        // If done timestamp is empty, set it to current time
+        // If done timestamp has value, clear it
+        let current_done = self
+            .done_timestamp_textarea
+            .lines()
+            .join("")
+            .trim()
+            .to_string();
+
+        if current_done.is_empty() {
+            // Set to current time
+            let now = chrono::Local::now();
+            let timestamp_str = now.format("%Y-%m-%d %H:%M").to_string();
+            self.done_timestamp_textarea = TextArea::new(vec![timestamp_str]);
+        } else {
+            // Clear the done timestamp
+            self.done_timestamp_textarea = TextArea::new(vec!["".to_string()]);
+        }
+    }
+
+    /// Save timestamp changes
+    fn save_timestamp(&mut self) {
+        if let Some(entry) = self.entries.get(self.selected) {
+            let new_timestamp_str = self.timestamp_textarea.lines().join("").trim().to_string();
+            let new_done_str = self
+                .done_timestamp_textarea
+                .lines()
+                .join("")
+                .trim()
+                .to_string();
+
+            // Parse the new timestamp
+            let new_timestamp =
+                match chrono::NaiveDateTime::parse_from_str(&new_timestamp_str, "%Y-%m-%d %H:%M") {
+                    Ok(dt) => match chrono::Local.from_local_datetime(&dt).single() {
+                        Some(local_dt) => local_dt,
+                        None => {
+                            self.error =
+                                Some("Invalid timestamp format or ambiguous time".to_string());
+                            return;
+                        }
+                    },
+                    Err(_) => {
+                        self.error =
+                            Some("Invalid timestamp format. Use YYYY-MM-DD HH:MM".to_string());
+                        return;
+                    }
+                };
+
+            // Parse the done timestamp if provided
+            let new_done = if new_done_str.is_empty() {
+                None
+            } else {
+                match chrono::NaiveDateTime::parse_from_str(&new_done_str, "%Y-%m-%d %H:%M") {
+                    Ok(_) => Some(new_done_str),
+                    Err(_) => {
+                        self.error =
+                            Some("Invalid done timestamp format. Use YYYY-MM-DD HH:MM".to_string());
+                        return;
+                    }
+                }
+            };
+
+            // Use EntryService to update the entry
+            match EntryService::update_entry_timestamp(&entry.uuid, new_timestamp, new_done) {
+                Ok(_) => {
+                    // Reload entries to ensure consistency
+                    self.load_entries();
+                    // Make sure selection is still valid
+                    if self.selected >= self.entries.len() && !self.entries.is_empty() {
+                        self.selected = self.entries.len() - 1;
+                    }
+                    self.mode = AppMode::Normal;
+                    self.error = None;
+                }
+                Err(e) => {
+                    self.error = Some(format!("Failed to update timestamp: {e}"));
                 }
             }
         }
