@@ -110,8 +110,8 @@ jobs:
         name: ${{ matrix.name }}
         path: ${{ matrix.name }}
 
-  create-release:
-    name: Create GitHub Release
+  sign-and-release:
+    name: Sign Binaries and Create Release
     needs: [validate-release, build-release]
     runs-on: ubuntu-latest
     steps:
@@ -125,17 +125,95 @@ jobs:
       with:
         path: ./artifacts
 
+    - name: Flatten artifacts directory
+      run: |
+        mkdir -p release-files
+        find ./artifacts -name "*.tar.gz" -o -name "*.zip" | while read file; do
+          cp "$file" release-files/
+        done
+        ls -la release-files/
+
+    - name: Generate checksums
+      run: |
+        cd release-files
+        # Generate SHA256 checksums
+        sha256sum * > checksums.txt
+        echo "Generated checksums:"
+        cat checksums.txt
+
+    - name: Import GPG key (if available)
+      if: env.GPG_PRIVATE_KEY != ''
+      env:
+        GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      run: |
+        echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+        echo "GPG key imported successfully"
+        gpg --list-secret-keys
+
+    - name: Sign binaries and checksums (if GPG key available)
+      if: env.GPG_PRIVATE_KEY != ''
+      env:
+        GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      run: |
+        cd release-files
+        # Sign each binary archive
+        for file in *.tar.gz *.zip; do
+          echo "Signing $file..."
+          gpg --batch --yes --passphrase="$GPG_PASSPHRASE" --pinentry-mode loopback --detach-sign --armor "$file"
+        done
+        
+        # Sign the checksums file
+        gpg --batch --yes --passphrase="$GPG_PASSPHRASE" --pinentry-mode loopback --detach-sign --armor checksums.txt
+        
+        echo "Generated signatures:"
+        ls -la *.asc
+
     - name: Generate changelog
       id: changelog
       run: |
-        # Get the previous tag
-        PREV_TAG=$(git describe --tags --abbrev=0 HEAD^)
+        # Get the previous tag (handle first release)
+        if git describe --tags --abbrev=0 HEAD^ >/dev/null 2>&1; then
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^)
+        else
+          PREV_TAG=""
+        fi
         CURRENT_TAG=${GITHUB_REF#refs/tags/}
         
-        echo "Generating changelog from $PREV_TAG to $CURRENT_TAG"
+        if [ -n "$PREV_TAG" ]; then
+          echo "Generating changelog from $PREV_TAG to $CURRENT_TAG"
+          CHANGELOG=$(git log --pretty=format:"- %s" $PREV_TAG..HEAD)
+          COMPARE_URL="**Full Changelog**: https://github.com/lnds/daily-log/compare/$PREV_TAG...$CURRENT_TAG"
+        else
+          echo "Generating changelog for first release $CURRENT_TAG"
+          CHANGELOG=$(git log --pretty=format:"- %s")
+          COMPARE_URL="**First Release** 🎉"
+        fi
         
-        # Generate changelog
-        CHANGELOG=$(git log --pretty=format:"- %s" $PREV_TAG..HEAD)
+        # Check if GPG signatures were created
+        SIGNATURE_INFO=""
+        if [ -f "release-files/checksums.txt.asc" ]; then
+          SIGNATURE_INFO="
+        ### 🔐 Verification
+        
+        All binaries are signed with GPG. To verify:
+        
+        1. **Download the \`.asc\` signature files** along with the binaries
+        2. **Import the public key**: \`curl -s https://github.com/lnds.gpg | gpg --import\`
+        3. **Verify signature**: \`gpg --verify daily-log-linux-x86_64.tar.gz.asc daily-log-linux-x86_64.tar.gz\`
+        4. **Verify checksums**: \`gpg --verify checksums.txt.asc checksums.txt && sha256sum -c checksums.txt\`
+        "
+        else
+          SIGNATURE_INFO="
+        ### ✅ Verification
+        
+        Verify file integrity using the provided \`checksums.txt\`:
+        \`\`\`bash
+        sha256sum -c checksums.txt
+        \`\`\`
+        "
+        fi
         
         # Write changelog to file for multiline support
         cat > changelog.txt << EOF
@@ -143,34 +221,46 @@ jobs:
         
         $CHANGELOG
         
-        **Full Changelog**: https://github.com/lnds/daily-log/compare/$PREV_TAG...$CURRENT_TAG
+        $COMPARE_URL
         
         ---
         
-        ### Installation
+        ### 📥 Installation
         
         Download the appropriate binary for your platform:
-        - **Linux**: \`daily-log-linux-x86_64.tar.gz\`
-        - **macOS (Intel)**: \`daily-log-macos-x86_64.tar.gz\`  
-        - **macOS (Apple Silicon)**: \`daily-log-macos-aarch64.tar.gz\`
-        - **Windows**: \`daily-log-windows-x86_64.zip\`
         
-        Extract the archive and add the binary to your PATH.
+        | Platform | Architecture | Download |
+        |----------|-------------|----------|
+        | 🐧 Linux | x86_64 | [\`daily-log-linux-x86_64.tar.gz\`](https://github.com/lnds/daily-log/releases/download/$CURRENT_TAG/daily-log-linux-x86_64.tar.gz) |
+        | 🍎 macOS | Intel (x86_64) | [\`daily-log-macos-x86_64.tar.gz\`](https://github.com/lnds/daily-log/releases/download/$CURRENT_TAG/daily-log-macos-x86_64.tar.gz) |
+        | 🍎 macOS | Apple Silicon (aarch64) | [\`daily-log-macos-aarch64.tar.gz\`](https://github.com/lnds/daily-log/releases/download/$CURRENT_TAG/daily-log-macos-aarch64.tar.gz) |
+        | 🪟 Windows | x86_64 | [\`daily-log-windows-x86_64.zip\`](https://github.com/lnds/daily-log/releases/download/$CURRENT_TAG/daily-log-windows-x86_64.zip) |
         
-        Verify installation: \`daily-log --version\`
+        **Quick Install:**
+        \`\`\`bash
+        # Extract and verify
+        tar -xzf daily-log-*.tar.gz  # or unzip for Windows
+        ./daily-log --version
+        
+        # Add to PATH (optional)
+        sudo mv daily-log /usr/local/bin/  # Linux/macOS
+        \`\`\`
+        
+        $SIGNATURE_INFO
+        
+        ### 🔢 Version
+        **daily-log v${{ needs.validate-release.outputs.version }}** - Following [Pragmatic Versioning](https://pragmaticversioning.com/)
         EOF
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v2
       with:
-        name: Release v${{ needs.validate-release.outputs.version }}
+        name: "daily-log v${{ needs.validate-release.outputs.version }}"
         body_path: changelog.txt
         files: |
-          ./artifacts/daily-log-linux-x86_64.tar.gz/daily-log-linux-x86_64.tar.gz
-          ./artifacts/daily-log-macos-x86_64.tar.gz/daily-log-macos-x86_64.tar.gz
-          ./artifacts/daily-log-macos-aarch64.tar.gz/daily-log-macos-aarch64.tar.gz
-          ./artifacts/daily-log-windows-x86_64.zip/daily-log-windows-x86_64.zip
+          release-files/*
         draft: false
         prerelease: ${{ startsWith(needs.validate-release.outputs.version, '0.') }}
+        make_latest: ${{ !startsWith(needs.validate-release.outputs.version, '0.') }}
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }
