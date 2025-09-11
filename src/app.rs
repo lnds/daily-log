@@ -48,6 +48,8 @@ pub struct App {
     done_timestamp_textarea: TextArea<'static>,
     /// Original done flag state when entering timestamp edit mode
     original_done_state: bool,
+    /// Which timestamp field is currently focused (0 = start, 1 = done)
+    timestamp_field_focus: usize,
 }
 
 impl Default for App {
@@ -77,6 +79,7 @@ impl App {
             timestamp_textarea: TextArea::default(),
             done_timestamp_textarea: TextArea::default(),
             original_done_state: false,
+            timestamp_field_focus: 0,
         };
         app.load_entries();
         app
@@ -505,29 +508,51 @@ impl App {
         }
 
         // Start timestamp field
+        let start_focused = self.timestamp_field_focus == 0;
         self.timestamp_textarea
             .set_style(Style::default().fg(Color::White));
-        self.timestamp_textarea
-            .set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
+        if start_focused {
+            self.timestamp_textarea
+                .set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
+        } else {
+            self.timestamp_textarea
+                .set_cursor_style(Style::default());
+        }
         self.timestamp_textarea
             .set_cursor_line_style(Style::default());
         self.timestamp_textarea.set_block(
             Block::default()
                 .borders(Borders::ALL)
+                .border_style(if start_focused {
+                    Style::default().fg(Color::Yellow)
+                } else {
+                    Style::default()
+                })
                 .title("Start Time (YYYY-MM-DD HH:MM)"),
         );
         frame.render_widget(&self.timestamp_textarea, chunks[2]);
 
         // Done timestamp field
+        let done_focused = self.timestamp_field_focus == 1;
         self.done_timestamp_textarea
             .set_style(Style::default().fg(Color::White));
-        self.done_timestamp_textarea
-            .set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
+        if done_focused {
+            self.done_timestamp_textarea
+                .set_cursor_style(Style::default().bg(Color::White).fg(Color::Black));
+        } else {
+            self.done_timestamp_textarea
+                .set_cursor_style(Style::default());
+        }
         self.done_timestamp_textarea
             .set_cursor_line_style(Style::default());
         self.done_timestamp_textarea.set_block(
             Block::default()
                 .borders(Borders::ALL)
+                .border_style(if done_focused {
+                    Style::default().fg(Color::Yellow)
+                } else {
+                    Style::default()
+                })
                 .title("Done Time (YYYY-MM-DD HH:MM) - Leave empty to remove @done"),
         );
         frame.render_widget(&self.done_timestamp_textarea, chunks[3]);
@@ -628,10 +653,14 @@ impl App {
                 }
                 (_, KeyCode::Tab) => {
                     // Switch between timestamp and done timestamp fields
-                    // This will be handled in the render function
+                    self.timestamp_field_focus = (self.timestamp_field_focus + 1) % 2;
                 }
-                (_, KeyCode::Char('d')) => {
-                    // Toggle done flag
+                (_, KeyCode::Enter) => {
+                    // Ignore Enter key to prevent clearing fields
+                    // Users should use Ctrl+S to save
+                }
+                (_, KeyCode::Char('d')) if key.modifiers.is_empty() => {
+                    // Toggle done flag only if no modifiers are pressed
                     self.toggle_done_in_timestamp_mode();
                 }
                 _ => {
@@ -878,6 +907,9 @@ impl App {
 
             // Store original done state
             self.original_done_state = entry.is_done();
+            
+            // Start with focus on the start timestamp field
+            self.timestamp_field_focus = 0;
 
             self.mode = AppMode::EditTimestamp;
         }
@@ -885,10 +917,17 @@ impl App {
 
     /// Handle text input for timestamp fields
     fn handle_timestamp_input(&mut self, key: KeyEvent) {
-        // For simplicity, we'll always route input to the start timestamp field
-        // In a more sophisticated UI, we'd track which field is focused
+        // Route input to the currently focused field
         let input = Input::from(key);
-        self.timestamp_textarea.input(input);
+        match self.timestamp_field_focus {
+            0 => {
+                self.timestamp_textarea.input(input);
+            }
+            1 => {
+                self.done_timestamp_textarea.input(input);
+            }
+            _ => {} // Should never happen
+        }
     }
 
     /// Toggle done flag in timestamp mode
